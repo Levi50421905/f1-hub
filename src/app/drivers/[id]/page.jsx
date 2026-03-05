@@ -1,7 +1,7 @@
 "use client";
 // src/app/drivers/[id]/page.jsx
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getTeamColor, getFlag } from "@/lib/teamColors";
 
@@ -23,7 +23,7 @@ function StatBox({ label, value, color, sub }) {
 const POS_COLOR = { 1: "#fbbf24", 2: "#9ca3af", 3: "#cd7c2f" };
 
 export default function DriverProfilePage({ params }) {
-  const { id } = use(params);
+  const id = params.id;
   const [driver, setDriver]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);

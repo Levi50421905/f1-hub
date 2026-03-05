@@ -7,6 +7,11 @@ export const metadata = {
   title: "F1 Hub — Formula One Dashboard",
   description: "Jadwal, klasemen, dan hasil race F1 — update otomatis",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon1.png",          // favicon utama
+    shortcut: "/icons/icon1.png",      // shortcut icon
+    apple: "/icons/icon1.png",      // apple touch icon
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

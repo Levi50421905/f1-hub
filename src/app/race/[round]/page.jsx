@@ -1,7 +1,7 @@
 "use client";
 // app/race/[round]/page.jsx
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getTeamColor, getFlag } from "@/lib/teamColors";
 
@@ -145,7 +145,7 @@ const SESSIONS = [
 ];
 
 export default function RaceDetailPage({ params }) {
-  const { round } = use(params);
+  const round = params.round;
   const [session, setSession] = useState("race");
   const [cache, setCache]     = useState({});
   const [loading, setLoading] = useState(false);
