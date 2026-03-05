@@ -1,5 +1,5 @@
 "use client";
-// src/app/drivers/page.jsx
+// src/app/drivers/page.jsx — mobile optimized
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -7,82 +7,67 @@ import { getTeamColor, getFlag } from "@/lib/teamColors";
 import { DRIVERS_2026 } from "@/lib/drivers2026";
 
 export default function DriversPage() {
-  const [apiDrivers, setApiDrivers] = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState("");
+  const [standings, setStandings] = useState(null);
+  const [search,    setSearch]    = useState("");
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     fetch("/api/standings?type=drivers")
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success && json.data.round > 0) {
-          setApiDrivers(json.data.drivers);
-        }
-      })
-      .catch(() => {})
+      .then(r => r.json())
+      .then(json => { if (json.success) setStandings(json.data); })
       .finally(() => setLoading(false));
   }, []);
 
-  // Kalau API sudah ada poin → pakai API (urut poin)
-  // Kalau belum → pakai static data (urut abjad)
-  const displayDrivers = apiDrivers
-    ? apiDrivers
-    : [...DRIVERS_2026]
-        .sort((a, b) => a.lastName.localeCompare(b.lastName))
-        .map((d, i) => ({
-          pos: i + 1,
-          points: 0,
-          wins: 0,
-          driver: {
-            id: d.id,
-            code: d.code,
-            num: d.num,
-            firstName: d.firstName,
-            lastName: d.lastName,
-            name: `${d.firstName} ${d.lastName}`,
-            nationality: d.nationality,
-          },
-          team: { id: d.team, name: d.teamName },
-        }));
+  const isPreSeason = !standings || standings.round === 0;
+  const maxPts = standings?.drivers?.[0]?.points || 1;
 
-  const filtered = displayDrivers.filter((d) =>
-    d.driver.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.team.name.toLowerCase().includes(search.toLowerCase()) ||
-    (d.driver.code || "").toLowerCase().includes(search.toLowerCase())
-  );
+  // Gabung data API + static
+  const drivers = isPreSeason
+    ? [...DRIVERS_2026].sort((a, b) => a.lastName.localeCompare(b.lastName)).map((d, i) => ({
+        pos: i + 1,
+        driver: { id: d.id, code: d.code, name: `${d.firstName} ${d.lastName}`, lastName: d.lastName, nationality: d.nationality },
+        team:   { id: d.team, name: d.teamName },
+        points: 0,
+      }))
+    : standings.drivers;
 
-  const seasonStarted = apiDrivers !== null;
+  const filtered = drivers.filter(d => {
+    const q = search.toLowerCase();
+    return !q
+      || d.driver.name?.toLowerCase().includes(q)
+      || d.driver.code?.toLowerCase().includes(q)
+      || d.team.name?.toLowerCase().includes(q);
+  });
 
   return (
     <div>
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse  { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
-        .d-card { transition: transform 0.2s, border-color 0.2s; }
-        .d-card:hover { transform: translateY(-3px); }
-        input::placeholder { color: #374151; }
-        input:focus { outline: none; border-color: #ef444466 !important; }
+        .driver-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        @media (max-width: 400px) {
+          .driver-grid { grid-template-columns: 1fr; }
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 8, fontFamily: "monospace" }}>
-          🧑‍✈️ DRIVER
-        </div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, marginBottom: 4 }}>
-          Driver F1 {new Date().getFullYear()}
-        </h1>
-        <p style={{ fontSize: 12, color: "#6b7280" }}>
-          {displayDrivers.length} driver ·{" "}
-          {seasonStarted ? "urut berdasarkan poin" : "urut alfabetis · poin update otomatis setelah race"}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 6, fontFamily: "monospace" }}>🧑‍✈️ DRIVER</div>
+        <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4 }}>Driver F1 {new Date().getFullYear()}</h1>
+        <p style={{ fontSize: 11, color: "#6b7280" }}>
+          {drivers.length} driver · {isPreSeason ? "urut alfabetis · pre-season" : "urut poin · update otomatis"}
         </p>
       </div>
 
-      {/* Pre-season notice */}
-      {!loading && !seasonStarted && (
+      {/* Pre-season banner */}
+      {isPreSeason && !loading && (
         <div style={{
           background: "#fbbf2410", border: "1px solid #fbbf2430",
-          borderRadius: 10, padding: "10px 16px", marginBottom: 16,
+          borderRadius: 10, padding: "10px 14px", marginBottom: 14,
           fontSize: 12, color: "#fbbf24",
         }}>
           ⏳ Musim belum dimulai · Poin otomatis terupdate setelah race pertama (Australian GP · 8 Mar 2026)
@@ -90,107 +75,107 @@ export default function DriversPage() {
       )}
 
       {/* Search */}
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Cari nama, tim, atau kode driver..."
-        style={{
-          width: "100%", background: "#0d1117",
-          border: "1px solid #1f2937", borderRadius: 10,
-          padding: "11px 16px", color: "#e2e8f0",
-          fontSize: 14, marginBottom: 20, transition: "border-color 0.2s",
-        }}
-      />
+      <div style={{ position: "relative", marginBottom: 14 }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari nama, tim, atau kode driver..."
+          style={{
+            width: "100%", background: "#0d1117",
+            border: "1px solid #1f2937", borderRadius: 10,
+            padding: "10px 14px", color: "#e2e8f0",
+            fontSize: 13, boxSizing: "border-box",
+            outline: "none",
+          }}
+        />
+        {search && (
+          <button onClick={() => setSearch("")} style={{
+            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+            background: "transparent", border: "none", color: "#6b7280",
+            cursor: "pointer", fontSize: 16,
+          }}>×</button>
+        )}
+      </div>
 
-      {/* Grid */}
+      {/* Driver Grid */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {[...Array(10)].map((_, i) => (
-            <div key={i} style={{
-              height: 108, background: "#0d1117", borderRadius: 12,
-              animation: "pulse 1.5s ease infinite", animationDelay: `${i * 60}ms`,
-            }} />
+        <div className="driver-grid">
+          {[...Array(8)].map((_,i) => (
+            <div key={i} style={{ height: 110, background: "#0d1117", borderRadius: 12, animation: "pulse 1.5s ease infinite" }} />
           ))}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div className="driver-grid">
           {filtered.map((d, i) => {
-            const color = getTeamColor(d.team.id);
-            const flag  = getFlag(d.driver.nationality);
+            const color   = getTeamColor(d.team.id);
+            const flag    = getFlag(d.driver.nationality);
+            const static_ = DRIVERS_2026.find(s => s.id === d.driver.id);
+            const num     = static_?.num || "";
+            const pct     = maxPts > 0 ? (d.points / maxPts) * 100 : 0;
+
             return (
               <Link key={d.driver.id} href={`/drivers/${d.driver.id}`} style={{ textDecoration: "none" }}>
-                <div className="d-card" style={{
+                <div style={{
                   background: "#0d1117",
-                  border: `1px solid ${seasonStarted && i < 3 ? color + "55" : "#1f2937"}`,
-                  borderRadius: 12, padding: "16px",
-                  animation: `fadeUp 0.3s ease ${i * 25}ms both`,
+                  border: `1px solid ${i < 3 && !isPreSeason ? color + "33" : "#1a1f2e"}`,
+                  borderRadius: 12, padding: "12px",
+                  animation: `fadeUp 0.25s ease ${i*20}ms both`,
+                  height: "100%", boxSizing: "border-box",
                 }}>
-                  {/* Top row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                    {/* Car number */}
+                  {/* Top row: number + flag + code */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                     <div style={{
-                      width: 46, height: 46, borderRadius: 10, flexShrink: 0,
-                      background: color + "18", border: `1px solid ${color}44`,
+                      width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                      background: color + "22", border: `1px solid ${color}44`,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 17, fontWeight: 900, color,
-                    }}>{d.driver.num || "?"}</div>
-
+                      fontSize: 14, fontWeight: 900, color,
+                    }}>{num}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <span style={{ fontSize: 16 }}>{flag}</span>
-                        <span style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {d.driver.lastName}
+                        <span style={{ fontSize: 14, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {d.driver.lastName || d.driver.name?.split(" ").pop()}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 3 }}>{d.driver.firstName}</div>
-                      <div style={{
-                        display: "inline-block",
-                        fontSize: 10, fontWeight: 700, color,
-                        background: color + "15", borderRadius: 5,
-                        padding: "2px 8px",
-                      }}>{d.team.name}</div>
+                      <div style={{ fontSize: 10, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {d.driver.name?.split(" ")[0]}
+                      </div>
                     </div>
-
-                    {d.driver.code && (
-                      <div style={{
-                        fontSize: 10, fontFamily: "monospace", fontWeight: 700,
-                        color: "#4b5563", background: "#1f2937",
-                        borderRadius: 6, padding: "3px 7px", flexShrink: 0, alignSelf: "flex-start",
-                      }}>{d.driver.code}</div>
+                    {!isPreSeason && i < 3 && (
+                      <span style={{ fontSize: 14 }}>{["🥇","🥈","🥉"][i]}</span>
                     )}
                   </div>
 
-                  {/* Points row */}
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                      <span style={{ fontSize: 11, color: "#4b5563" }}>
-                        {seasonStarted ? `P${d.pos}` : "Pre-season"}
-                        {d.wins > 0 && <span style={{ color: "#fbbf24", marginLeft: 8 }}>🏆 {d.wins}W</span>}
-                      </span>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: seasonStarted && i === 0 ? color : "#6b7280" }}>
-                        {d.points} <span style={{ fontSize: 10, fontWeight: 400, color: "#374151" }}>pts</span>
-                      </span>
-                    </div>
-                    <div style={{ height: 3, background: "#1a1f2e", borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{
-                        width: seasonStarted && displayDrivers[0]?.points > 0
-                          ? `${(d.points / displayDrivers[0].points) * 100}%`
-                          : "0%",
-                        height: "100%", background: color, borderRadius: 4,
-                        transition: "width 1.2s ease",
-                      }} />
-                    </div>
+                  {/* Team */}
+                  <div style={{
+                    display: "inline-block",
+                    fontSize: 10, color, background: color + "15",
+                    border: `1px solid ${color}33`, borderRadius: 5,
+                    padding: "2px 7px", marginBottom: 8,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    maxWidth: "100%",
+                  }}>{d.team.name}</div>
+
+                  {/* Points */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                    <span style={{ fontSize: 10, color: "#6b7280" }}>{isPreSeason ? "Pre-season" : `P${i+1}`}</span>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: isPreSeason ? "#374151" : i === 0 ? color : "#9ca3af" }}>
+                      {d.points} <span style={{ fontSize: 9, fontWeight: 400, color: "#4b5563" }}>pts</span>
+                    </span>
+                  </div>
+                  <div style={{ height: 3, background: "#1a1f2e", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.5s ease" }} />
                   </div>
                 </div>
               </Link>
             );
           })}
+        </div>
+      )}
 
-          {filtered.length === 0 && (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px 0", color: "#4b5563", fontSize: 14 }}>
-              Tidak ada driver yang cocok dengan "{search}"
-            </div>
-          )}
+      {filtered.length === 0 && !loading && (
+        <div style={{ textAlign: "center", padding: "40px 0", color: "#4b5563" }}>
+          Tidak ada driver yang cocok dengan "{search}"
         </div>
       )}
     </div>

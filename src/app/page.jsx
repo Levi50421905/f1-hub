@@ -1,9 +1,29 @@
 "use client";
-// app/page.jsx
+// src/app/page.jsx — Home
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getTeamColor, getFlag, getCountryFlag } from "@/lib/teamColors";
+import { SCHEDULE_2026 } from "@/lib/schedule2026";
+
+function toWIB(dateStr, timeStr) {
+  if (!dateStr) return null;
+  try {
+    const raw   = `${dateStr}T${timeStr || "00:00:00Z"}`;
+    const clean = raw.endsWith("Z") ? raw : raw + "Z";
+    const dt    = new Date(clean);
+    return isNaN(dt) ? null : new Date(dt.getTime() + 7 * 60 * 60 * 1000);
+  } catch { return null; }
+}
+
+function fmtWIB(dateStr, timeStr) {
+  const dt = toWIB(dateStr, timeStr);
+  if (!dt) return null;
+  return dt.toLocaleString("id-ID", {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }) + " WIB";
+}
 
 export default function HomePage() {
   const [standings, setStandings] = useState(null);
@@ -12,183 +32,201 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/standings?type=drivers").then((r) => r.json()),
-      fetch("/api/schedule").then((r) => r.json()),
-    ]).then(([dJson, sJson]) => {
-      if (dJson.success) setStandings(dJson.data);
-      if (sJson.success) setSchedule(sJson.data);
+      fetch("/api/standings?type=drivers").then(r => r.json()),
+      fetch("/api/schedule").then(r => r.json()),
+    ]).then(([d, s]) => {
+      if (d.success) setStandings(d.data);
+      if (s.success) setSchedule(s.data);
     }).finally(() => setLoading(false));
   }, []);
 
-  const nextRace    = schedule.find((r) => r.status === "upcoming");
-  const finishedCnt = schedule.filter((r) => r.status === "finished").length;
-  const today       = new Date();
+  const today    = new Date();
+  const nextRace = schedule.find(r => r.status === "upcoming");
+  const upcoming = schedule.filter(r => r.status === "upcoming").slice(0, 5);
+  const top5     = standings?.drivers?.slice(0, 5) || [];
+  const leader   = top5[0];
+
+  const fb       = nextRace ? SCHEDULE_2026[nextRace.round] || {} : {};
+  const raceWIB  = nextRace ? fmtWIB(nextRace.date || fb.race?.date, nextRace.time || fb.race?.time) : null;
+  const qualiWIB = nextRace ? fmtWIB(
+    nextRace.qualifying?.date || fb.qualifying?.date,
+    nextRace.qualifying?.time || fb.qualifying?.time
+  ) : null;
 
   function daysUntil(ds) {
     return Math.ceil((new Date(ds) - today) / (1000 * 60 * 60 * 24));
   }
-  function fmtDate(ds) {
-    return new Date(ds).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-  }
 
   return (
-    <div>
+    <div style={{ paddingBottom: 8 }}>
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
-        .card { transition: all 0.2s; }
-        .card:hover { transform: translateY(-2px); }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse  { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        .stat-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+        }
+        @media (max-width: 640px) {
+          .stat-grid { grid-template-columns: repeat(2, 1fr); }
+          .home-bottom { flex-direction: column !important; }
+          .home-bottom > div { width: 100% !important; }
+        }
       `}</style>
 
-      {/* Hero */}
-      <div style={{
-        background: "linear-gradient(135deg, #0a0005 0%, #12000a 60%, #050010 100%)",
-        border: "1px solid #1a0a1a", borderRadius: 20,
-        padding: "40px 36px", marginBottom: 24, position: "relative", overflow: "hidden",
-        animation: "fadeUp 0.5s ease",
-      }}>
-        <div style={{ position: "absolute", top: 0, right: 0, width: 300, height: 300, background: "radial-gradient(circle,#ef444412,transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 12, fontFamily: "monospace" }}>
-          ⬤ FORMULA ONE · LIVE DATA
-        </div>
-        <h1 style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontSize: 52, fontWeight: 900, letterSpacing: -2, lineHeight: 0.95, marginBottom: 16,
+      {/* Next Race Hero */}
+      {!loading && nextRace && (
+        <div style={{
+          background: "linear-gradient(135deg,#0a0005,#0f0012)",
+          border: "1px solid #2d1030", borderRadius: 16,
+          padding: "20px", marginBottom: 16,
+          position: "relative", overflow: "hidden",
+          animation: "fadeUp 0.4s ease",
         }}>
-          F1 HUB<br />
-          <span style={{ color: "#ef4444", fontSize: 36 }}>
-            {new Date().getFullYear()} SEASON
-          </span>
-        </h1>
-        <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 28, maxWidth: 480 }}>
-          Data standings, jadwal, dan hasil race F1 langsung dari API resmi — update otomatis setiap selesai race.
-        </p>
+          <div style={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, background: "radial-gradient(circle,#ef444418,transparent 70%)", pointerEvents: "none" }} />
 
-        {/* Next Race */}
-        {nextRace ? (
-          <Link href={`/race/${nextRace.round}`} style={{ textDecoration: "none" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 20,
-              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 14, padding: "16px 24px", cursor: "pointer",
-              transition: "all 0.2s",
-            }}>
-              <div>
-                <div style={{ fontSize: 10, color: "#6b7280", letterSpacing: 2, marginBottom: 4 }}>RACE BERIKUTNYA</div>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>
-                  {getCountryFlag(nextRace.circuit.country)} {nextRace.name}
-                </div>
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
-                  {nextRace.circuit.name} · {fmtDate(nextRace.date)}
-                </div>
+          <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 10, fontFamily: "monospace" }}>
+            ⬤ RACE BERIKUTNYA
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, marginRight: 16 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4, lineHeight: 1.2 }}>
+                {getCountryFlag(nextRace.circuit.country)} {nextRace.name}
+              </h2>
+              <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+                {nextRace.circuit.name}
               </div>
-              <div style={{ textAlign: "center", padding: "0 16px", borderLeft: "1px solid #1f2937" }}>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>
-                  {daysUntil(nextRace.date)}
-                </div>
-                <div style={{ fontSize: 10, color: "#6b7280" }}>HARI</div>
+
+              {/* Quali & Race time */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {qualiWIB && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, color: "#60a5fa", minWidth: 60 }}>🔵 Quali</span>
+                    <span style={{ fontSize: 12, fontFamily: "monospace", color: "#93c5fd", fontWeight: 600 }}>{qualiWIB}</span>
+                  </div>
+                )}
+                {raceWIB && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, color: "#fbbf24", minWidth: 60 }}>🏁 Race</span>
+                    <span style={{ fontSize: 12, fontFamily: "monospace", color: "#fde68a", fontWeight: 700 }}>{raceWIB}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </Link>
-        ) : loading && (
-          <div style={{ height: 80, width: 280, background: "#1a0a1a", borderRadius: 14, animation: "pulse 1.5s ease infinite" }} />
-        )}
-      </div>
+
+            {/* Countdown */}
+            <div style={{ textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: 48, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>
+                {daysUntil(nextRace.date)}
+              </div>
+              <div style={{ fontSize: 10, color: "#6b7280" }}>HARI</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
-        {[
-          { label: "Race Selesai", val: loading ? "—" : finishedCnt, sub: `dari ${schedule.length}`, icon: "🏁" },
-          { label: "Points Leader", val: loading ? "—" : standings?.drivers?.[0]?.driver?.code || "—", sub: `${standings?.drivers?.[0]?.points || 0} pts`, icon: "🏆" },
-          { label: "Race Weekend", val: loading ? "—" : nextRace ? `R${nextRace.round}` : "—", sub: nextRace?.circuit?.country || "", icon: "📍" },
-          { label: "Update", val: "Auto", sub: "tiap 1 jam", icon: "🔄" },
-        ].map((s) => (
-          <div key={s.label} style={{
-            background: "#0d1117", border: "1px solid #1f2937",
-            borderRadius: 12, padding: "16px", textAlign: "center",
-            animation: "fadeUp 0.5s ease",
-          }}>
-            <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 2 }}>{s.val}</div>
-            <div style={{ fontSize: 10, color: "#6b7280" }}>{s.sub}</div>
-            <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {!loading && (
+        <div className="stat-grid" style={{ marginBottom: 16, animation: "fadeUp 0.4s ease 0.1s both" }}>
+          {[
+            { icon: "🏁", val: schedule.filter(r=>r.status==="finished").length, sub1: `dari ${schedule.length}`, sub2: "Race Selesai" },
+            { icon: "🏆", val: leader ? leader.points : "—", sub1: leader ? leader.driver.code : "0 pts", sub2: "Points Leader" },
+            { icon: "📍", val: nextRace ? `R${nextRace.round}` : "—", sub1: nextRace?.circuit.country || "", sub2: "Race Weekend" },
+            { icon: "🔄", val: "Auto", sub1: "tiap 1 jam", sub2: "Update" },
+          ].map((s, i) => (
+            <div key={i} style={{
+              background: "#0d1117", border: "1px solid #1a1f2e",
+              borderRadius: 12, padding: "14px 12px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 2 }}>{s.val}</div>
+              <div style={{ fontSize: 10, color: "#6b7280" }}>{s.sub1}</div>
+              <div style={{ fontSize: 10, color: "#374151" }}>{s.sub2}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {/* Top 5 Driver Standings */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 800, color: "#9ca3af" }}>🏆 TOP DRIVER</h2>
+      {/* Bottom section */}
+      <div className="home-bottom" style={{ display: "flex", gap: 12, animation: "fadeUp 0.4s ease 0.2s both" }}>
+
+        {/* Top Driver */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>🏆 TOP DRIVER</span>
             <Link href="/standings" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
           </div>
           <div style={{ display: "grid", gap: 6 }}>
-            {loading ? [...Array(5)].map((_, i) => (
-              <div key={i} style={{ height: 52, background: "#0d1117", borderRadius: 8, animation: "pulse 1.5s ease infinite", animationDelay: `${i * 60}ms` }} />
-            )) : standings?.drivers?.slice(0, 5).map((d, i) => {
+            {top5.length > 0 ? top5.map((d, i) => {
               const color = getTeamColor(d.team.id);
-              const flag  = getFlag(d.driver.nationality);
               return (
                 <div key={d.driver.id} style={{
-                  background: "#0d1117", border: `1px solid ${i === 0 ? color + "44" : "#1f2937"}`,
-                  borderRadius: 8, padding: "10px 14px",
+                  background: "#0d1117", border: `1px solid ${i === 0 ? color + "33" : "#1a1f2e"}`,
+                  borderRadius: 10, padding: "10px 12px",
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: i === 0 ? color : "#4b5563", minWidth: 20 }}>P{d.pos}</span>
-                  <span style={{ fontSize: 16 }}>{flag}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {d.driver.lastName}
-                    </div>
-                    <div style={{ fontSize: 10, color: color }}>{d.driver.code}</div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: i === 0 ? color : "#4b5563", minWidth: 20 }}>P{i+1}</span>
+                  <span style={{ fontSize: 16 }}>{getFlag(d.driver.nationality)}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{d.driver.code || d.driver.lastName}</div>
+                    <div style={{ fontSize: 10, color }}>{d.team.name}</div>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: i === 0 ? color : "#e2e8f0" }}>{d.points}</div>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? color : "#6b7280" }}>{d.points}</span>
                 </div>
               );
-            })}
-            {!loading && standings?.round === 0 && (
-              <div style={{ textAlign: "center", padding: "20px 0", color: "#4b5563", fontSize: 13 }}>
-                Musim belum dimulai — standings akan muncul setelah race pertama 🏁
+            }) : (
+              <div style={{
+                background: "#0d1117", border: "1px solid #1a1f2e",
+                borderRadius: 10, padding: "16px 12px", textAlign: "center",
+                fontSize: 12, color: "#4b5563",
+              }}>
+                Musim belum dimulai —<br />standings muncul setelah race pertama 🏁
               </div>
             )}
           </div>
         </div>
 
-        {/* Upcoming Races */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 800, color: "#9ca3af" }}>📅 RACE SELANJUTNYA</h2>
+        {/* Upcoming races */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>📅 RACE SELANJUTNYA</span>
             <Link href="/schedule" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
           </div>
           <div style={{ display: "grid", gap: 6 }}>
-            {loading ? [...Array(5)].map((_, i) => (
-              <div key={i} style={{ height: 52, background: "#0d1117", borderRadius: 8, animation: "pulse 1.5s ease infinite", animationDelay: `${i * 60}ms` }} />
-            )) : schedule.filter((r) => r.status === "upcoming").slice(0, 5).map((race, i) => (
-              <Link key={race.round} href={`/race/${race.round}`} style={{ textDecoration: "none" }}>
-                <div style={{
-                  background: "#0d1117", border: `1px solid ${i === 0 ? "#ef444433" : "#1f2937"}`,
-                  borderRadius: 8, padding: "10px 14px",
-                  display: "flex", alignItems: "center", gap: 10,
-                  cursor: "pointer", transition: "background 0.15s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "#111827"}
-                onMouseLeave={e => e.currentTarget.style.background = "#0d1117"}
-                >
-                  <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? "#ef4444" : "#4b5563", minWidth: 20 }}>R{race.round}</span>
-                  <span style={{ fontSize: 16 }}>{getCountryFlag(race.circuit.country)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {race.name}
+            {upcoming.map((race, i) => {
+              const days = daysUntil(race.date);
+              const fb2  = SCHEDULE_2026[race.round] || {};
+              const wib  = fmtWIB(race.date || fb2.race?.date, race.time || fb2.race?.time);
+              return (
+                <Link key={race.round} href={`/race/${race.round}`} style={{ textDecoration: "none" }}>
+                  <div style={{
+                    background: "#0d1117", border: `1px solid ${i === 0 ? "#ef444433" : "#1a1f2e"}`,
+                    borderRadius: 10, padding: "10px 12px",
+                    display: "flex", alignItems: "center", gap: 10,
+                    transition: "background 0.15s",
+                  }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+                      background: i === 0 ? "#ef444422" : "#1a1f2e",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, fontWeight: 800,
+                      color: i === 0 ? "#ef4444" : "#4b5563",
+                    }}>R{race.round}</div>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{getCountryFlag(race.circuit.country)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {race.name.replace(" Grand Prix", " GP")}
+                      </div>
+                      {wib && <div style={{ fontSize: 10, color: "#6b7280", fontFamily: "monospace" }}>{wib}</div>}
                     </div>
-                    <div style={{ fontSize: 10, color: "#4b5563" }}>{fmtDate(race.date)}</div>
+                    <span style={{ fontSize: 11, color: i === 0 ? "#ef4444" : "#4b5563", flexShrink: 0 }}>
+                      {days === 0 ? "🔥" : days === 1 ? "Besok" : `${days}h`}
+                    </span>
                   </div>
-                  <div style={{ fontSize: 12, color: i === 0 ? "#ef4444" : "#4b5563", fontFamily: "monospace" }}>
-                    {daysUntil(race.date)}h
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
