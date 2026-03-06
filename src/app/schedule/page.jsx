@@ -29,17 +29,12 @@ function getSessions(race) {
   const fb       = SCHEDULE_2026[race.round] || {};
   const isSprint = !!(race.sprint || fb.sprint);
   return [
-    { key: "fp1",        label: "FP1",         icon: "🟡", date: race.fp1?.date        || fb.fp1?.date,        time: race.fp1?.time        || fb.fp1?.time        },
-    { key: "fp2",        label: "FP2",         icon: "🟡", date: race.fp2?.date        || fb.fp2?.date,        time: race.fp2?.time        || fb.fp2?.time        },
-    isSprint
-      ? { key: "sprintQ", label: "Sprint Q",   icon: "⚡", date: race.fp3?.date        || fb.fp2?.date,        time: race.fp3?.time        || fb.fp2?.time        }
-      : { key: "fp3",     label: "FP3",        icon: "🟡", date: race.fp3?.date        || fb.fp3?.date,        time: race.fp3?.time        || fb.fp3?.time        },
-    isSprint
-      ? { key: "sprint",  label: "Sprint",     icon: "⚡", date: race.sprint?.date     || fb.fp3?.date,        time: race.sprint?.time     || fb.fp3?.time        }
-      : null,
-    { key: "qualifying", label: "Qualifying",  icon: "🔵", date: race.qualifying?.date || fb.qualifying?.date, time: race.qualifying?.time || fb.qualifying?.time },
-    { key: "race",       label: "RACE",        icon: "🏁", date: race.date             || fb.race?.date,       time: race.time             || fb.race?.time        },
-  ].filter(Boolean);
+    { key: "fp1",        label: "FP1",        icon: "🟡", date: fb.fp1?.date,        time: fb.fp1?.time        },
+    { key: "fp2",        label: isSprint ? "Sprint Q" : "FP2", icon: isSprint ? "⚡" : "🟡", date: fb.fp2?.date, time: fb.fp2?.time },
+    { key: "fp3",        label: isSprint ? "Sprint"   : "FP3", icon: isSprint ? "⚡" : "🟡", date: fb.fp3?.date, time: fb.fp3?.time },
+    { key: "qualifying", label: "Qualifying",  icon: "🔵", date: fb.qualifying?.date, time: fb.qualifying?.time },
+    { key: "race",       label: "RACE",        icon: "🏁", date: fb.race?.date,       time: fb.race?.time       },
+  ].filter(s => s.date);
 }
 
 export default function SchedulePage() {
@@ -64,8 +59,8 @@ export default function SchedulePage() {
   }
 
   const nextFb   = nextRace ? SCHEDULE_2026[nextRace.round] || {} : {};
-  const raceWIB  = nextRace ? fmtCompact(nextRace.date || nextFb.race?.date, nextRace.time || nextFb.race?.time) : null;
-  const qualiWIB = nextRace ? fmtCompact(nextRace.qualifying?.date || nextFb.qualifying?.date, nextRace.qualifying?.time || nextFb.qualifying?.time) : null;
+  const raceWIB  = nextRace ? fmtCompact(nextFb.race?.date,       nextFb.race?.time)       : null;
+  const qualiWIB = nextRace ? fmtCompact(nextFb.qualifying?.date, nextFb.qualifying?.time) : null;
 
   return (
     <div>
@@ -153,7 +148,7 @@ export default function SchedulePage() {
             const days    = daysUntil(race.date);
             const isOpen  = expanded === race.round;
             const isSprint = !!(race.sprint || fb.sprint);
-            const rWIB    = fmtCompact(race.date || fb.race?.date, race.time || fb.race?.time);
+            const rWIB = fmtCompact(fb.race?.date, fb.race?.time);
             const sessions = getSessions(race);
 
             return (
