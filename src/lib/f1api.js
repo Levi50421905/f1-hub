@@ -5,6 +5,8 @@
 // Docs: https://api.jolpi.ca
 // ─────────────────────────────────────────────
 
+import { SCHEDULE_2026 } from "@/lib/schedule2026";
+
 const BASE = "https://api.jolpi.ca/ergast/f1";
 const SEASON = new Date().getFullYear(); // otomatis deteksi tahun
 
@@ -80,28 +82,34 @@ export async function getSchedule(season = SEASON) {
   const data = await fetchF1(`/${season}`);
   const races = data.RaceTable?.Races || [];
 
-  return races.map((r) => ({
-    season: r.season,
-    round: parseInt(r.round),
-    name: r.raceName,
-    url: r.url,
-    circuit: {
-      id: r.Circuit.circuitId,
-      name: r.Circuit.circuitName,
-      location: r.Circuit.Location.locality,
-      country: r.Circuit.Location.country,
-      lat: r.Circuit.Location.lat,
-      long: r.Circuit.Location.long,
-    },
-    date: r.date,
-    time: r.time,
-    // Session times (jika tersedia)
-    fp1: r.FirstPractice ? { date: r.FirstPractice.date, time: r.FirstPractice.time } : null,
-    fp2: r.SecondPractice ? { date: r.SecondPractice.date, time: r.SecondPractice.time } : null,
-    fp3: r.ThirdPractice ? { date: r.ThirdPractice.date, time: r.ThirdPractice.time } : null,
-    sprint: r.Sprint ? { date: r.Sprint.date, time: r.Sprint.time } : null,
-    qualifying: r.Qualifying ? { date: r.Qualifying.date, time: r.Qualifying.time } : null,
-  }));
+  return races.map((r) => {
+    const round = parseInt(r.round);
+    // Selalu pakai SCHEDULE_2026 untuk semua waktu sesi —
+    // Jolpica kadang return time tanpa Z atau null sebelum musim mulai
+    const fb = SCHEDULE_2026[round] || {};
+
+    return {
+      season: r.season,
+      round,
+      name: r.raceName,
+      url: r.url,
+      circuit: {
+        id: r.Circuit.circuitId,
+        name: r.Circuit.circuitName,
+        location: r.Circuit.Location.locality,
+        country: r.Circuit.Location.country,
+        lat: r.Circuit.Location.lat,
+        long: r.Circuit.Location.long,
+      },
+      date: fb.race?.date || r.date,
+      time: fb.race?.time || (r.time ? r.time.replace(/Z?$/, "Z") : null),
+      fp1:        fb.fp1        ? { date: fb.fp1.date,        time: fb.fp1.time        } : null,
+      fp2:        fb.fp2        ? { date: fb.fp2.date,        time: fb.fp2.time        } : null,
+      fp3:        fb.fp3        ? { date: fb.fp3.date,        time: fb.fp3.time        } : null,
+      sprint:     fb.sprint     ? { date: fb.sprint.date,     time: fb.sprint.time     } : null,
+      qualifying: fb.qualifying ? { date: fb.qualifying.date, time: fb.qualifying.time } : null,
+    };
+  });
 }
 
 // ─── RACE RESULTS ─────────────────────────────
