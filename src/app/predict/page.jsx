@@ -1,150 +1,136 @@
 "use client";
-// src/app/predict/page.jsx — top 5, tap cards, mobile optimized
+// src/app/predict/page.jsx
+// Prediksi top 5 — simpan ke Redis, bisa main bareng
 
-import { useState, useEffect } from "react";
-import { getTeamColor, getFlag, getCountryFlag } from "@/lib/teamColors";
+import { useState, useEffect, useRef } from "react";
 import { DRIVERS_2026 } from "@/lib/drivers2026";
+import { getTeamColor, getCountryFlag } from "@/lib/teamColors";
+import Link from "next/link";
 
-const POS_LABELS = ["P1 🥇", "P2 🥈", "P3 🥉", "P4", "P5"];
-const POS_COLORS = ["#fbbf24", "#9ca3af", "#b45309", "#6b7280", "#4b5563"];
+const POSITIONS = [
+  { label: "P1", emoji: "🥇" },
+  { label: "P2", emoji: "🥈" },
+  { label: "P3", emoji: "🥉" },
+  { label: "P4", emoji: "4️⃣" },
+  { label: "P5", emoji: "5️⃣" },
+];
 
-function calcScore(prediction, actual) {
-  if (!prediction || !actual) return null;
+function calcScore(picks, actual) {
+  if (!picks || !actual || actual.length === 0) return null;
   let score = 0;
-  prediction.forEach((id, idx) => {
-    if (!id) return;
-    if (actual[idx] === id) score += 3;
-    else if (actual.includes(id)) score += 1;
+  picks.forEach((driverId, idx) => {
+    if (!driverId) return;
+    if (actual[idx] === driverId) score += 3;
+    else if (actual.includes(driverId)) score += 1;
   });
   return score;
 }
 
-// ── Name Modal ────────────────────────────────────────────────
-function NameModal({ onConfirm }) {
-  const [name, setName] = useState("");
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 9999, padding: 20,
-    }}>
-      <div style={{
-        background: "#0d1117", border: "1px solid #ef444444",
-        borderRadius: 20, padding: "28px 22px",
-        width: "100%", maxWidth: 360,
-      }}>
-        <div style={{ fontSize: 36, textAlign: "center", marginBottom: 14 }}>🏎️</div>
-        <h2 style={{ fontSize: 20, fontWeight: 900, textAlign: "center", marginBottom: 6 }}>Siapa namamu?</h2>
-        <p style={{ fontSize: 12, color: "#6b7280", textAlign: "center", marginBottom: 20 }}>
-          Nama ini muncul di papan skor
-        </p>
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && name.trim() && onConfirm(name.trim())}
-          placeholder="Contoh: Aldi, Bang Reza..."
-          autoFocus maxLength={20}
-          style={{
-            width: "100%", background: "#1a1f2e",
-            border: "1px solid #1f2937", borderRadius: 10,
-            padding: "12px 14px", color: "#e2e8f0",
-            fontSize: 16, marginBottom: 12,
-            outline: "none", boxSizing: "border-box",
-          }}
-        />
-        <button
-          onClick={() => name.trim() && onConfirm(name.trim())}
-          disabled={!name.trim()}
-          style={{
-            width: "100%", padding: "12px",
-            background: name.trim() ? "#ef4444" : "#1f2937",
-            border: "none", borderRadius: 10,
-            color: name.trim() ? "#fff" : "#4b5563",
-            fontSize: 15, fontWeight: 700,
-            cursor: name.trim() ? "pointer" : "not-allowed",
-            fontFamily: "inherit",
-          }}
-        >Mulai →</button>
-      </div>
-    </div>
-  );
-}
+// ── Driver Picker (bottom sheet modal) ──────────────────────
+function DriverPicker({ open, onClose, onSelect, selected, disabledIds, posLabel }) {
+  const [search, setSearch] = useState("");
+  const inputRef = useRef(null);
 
-// ── Driver picker modal ────────────────────────────────────────
-function DriverPicker({ posIdx, selected, onPick, onClose, disabled }) {
-  const [q, setQ] = useState("");
-  const filtered  = DRIVERS_2026.filter(d =>
-    !q || d.lastName.toLowerCase().includes(q.toLowerCase()) || d.teamName.toLowerCase().includes(q.toLowerCase())
+  useEffect(() => {
+    if (open) { setSearch(""); setTimeout(() => inputRef.current?.focus(), 100); }
+  }, [open]);
+
+  if (!open) return null;
+
+  const filtered = DRIVERS_2026.filter(d =>
+    !search ||
+    d.lastName.toLowerCase().includes(search.toLowerCase()) ||
+    d.firstName.toLowerCase().includes(search.toLowerCase()) ||
+    d.teamName.toLowerCase().includes(search.toLowerCase()) ||
+    String(d.num).includes(search)
   );
 
-  if (disabled) return null;
-
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)",
-      zIndex: 9998, display: "flex", flexDirection: "column",
-      padding: "0",
-    }} onClick={onClose}>
-      <div style={{
-        marginTop: "auto",
-        background: "#0d1117", borderRadius: "20px 20px 0 0",
-        border: "1px solid #1f2937", borderBottom: "none",
-        maxHeight: "80vh", display: "flex", flexDirection: "column",
-      }} onClick={e => e.stopPropagation()}>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+        zIndex: 1000, display: "flex", alignItems: "flex-end",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 480, margin: "0 auto",
+          background: "#0d1117", borderRadius: "16px 16px 0 0",
+          border: "1px solid #1f2937", borderBottom: "none",
+          maxHeight: "70vh", display: "flex", flexDirection: "column",
+          animation: "slideUp 0.2s ease",
+        }}
+      >
         {/* Header */}
-        <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid #1a1f2e" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>Pilih {POS_LABELS[posIdx]}</span>
-            <button onClick={onClose} style={{ background: "#1f2937", border: "none", borderRadius: 20, width: 28, height: 28, color: "#9ca3af", cursor: "pointer", fontSize: 16, fontFamily: "inherit" }}>×</button>
+        <div style={{ padding: "16px 16px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Pilih Driver — {posLabel}</div>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", color: "#6b7280", fontSize: 18, cursor: "pointer", padding: 4 }}
+            >✕</button>
           </div>
           <input
-            value={q} onChange={e => setQ(e.target.value)}
-            placeholder="Cari driver..."
-            autoFocus
+            ref={inputRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama driver atau tim..."
             style={{
-              width: "100%", background: "#1a1f2e",
-              border: "1px solid #1f2937", borderRadius: 8,
-              padding: "9px 12px", color: "#e2e8f0",
-              fontSize: 13, outline: "none", boxSizing: "border-box",
+              width: "100%", background: "#1a1f2e", border: "1px solid #1f2937",
+              borderRadius: 10, padding: "10px 14px",
+              color: "#f9fafb", fontSize: 13, fontFamily: "inherit",
+              outline: "none", marginBottom: 12,
             }}
           />
         </div>
         {/* Driver list */}
-        <div style={{ overflowY: "auto", padding: "8px 12px 20px" }}>
-          {/* Kosongkan pilihan */}
+        <div style={{ overflowY: "auto", padding: "0 16px 16px" }}>
+          {/* Clear option */}
           <div
-            onClick={() => onPick(null)}
+            onClick={() => { onSelect(null); onClose(); }}
             style={{
-              padding: "10px 12px", borderRadius: 8, marginBottom: 4,
-              background: "#1a1f2e", cursor: "pointer",
-              fontSize: 13, color: "#6b7280",
+              padding: "10px 14px", borderRadius: 10, marginBottom: 6,
+              background: "#1a1f2e", border: "1px solid #1f2937",
+              cursor: "pointer", fontSize: 12, color: "#6b7280",
             }}
-          >— Kosongkan pilihan ini</div>
-          {filtered.map(d => {
-            const color   = getTeamColor(d.team);
-            const isSelP  = selected.includes(d.id);
+          >
+            — Kosongkan pilihan
+          </div>
+          {filtered.map(driver => {
+            const isSelected = selected === driver.id;
+            const isDisabled = disabledIds.includes(driver.id) && !isSelected;
+            const color = getTeamColor(driver.team);
             return (
               <div
-                key={d.id}
-                onClick={() => onPick(d.id)}
+                key={driver.id}
+                onClick={() => { if (!isDisabled) { onSelect(driver.id); onClose(); }}}
                 style={{
-                  padding: "10px 12px", borderRadius: 8, marginBottom: 4,
-                  background: isSelP ? color + "22" : "#0f1117",
-                  border: `1px solid ${isSelP ? color + "55" : "transparent"}`,
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 14px", borderRadius: 10, marginBottom: 4,
+                  background: isSelected ? "#1a1f2e" : "transparent",
+                  border: `1px solid ${isSelected ? color + "50" : "transparent"}`,
+                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  opacity: isDisabled ? 0.35 : 1,
+                  transition: "background 0.1s",
                 }}
               >
                 <div style={{
-                  width: 32, height: 32, borderRadius: 6, flexShrink: 0,
-                  background: color + "22", display: "flex", alignItems: "center",
-                  justifyContent: "center", fontSize: 12, fontWeight: 900, color,
-                }}>{d.num}</div>
-                <span style={{ fontSize: 16 }}>{getFlag(d.nationality)}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{d.lastName}</div>
-                  <div style={{ fontSize: 11, color }}>{d.teamName}</div>
+                  width: 32, height: 32, borderRadius: 8,
+                  background: color + "20", border: `1px solid ${color}40`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 900, color, flexShrink: 0,
+                }}>
+                  {driver.num}
                 </div>
-                {isSelP && <span style={{ fontSize: 12, color: "#22c55e" }}>✓</span>}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? color : "#f9fafb" }}>
+                    {driver.firstName} {driver.lastName}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#4b5563" }}>{driver.teamName}</div>
+                </div>
+                {isSelected && <span style={{ fontSize: 14, color }}>✓</span>}
               </div>
             );
           })}
@@ -154,403 +140,396 @@ function DriverPicker({ posIdx, selected, onPick, onClose, disabled }) {
   );
 }
 
-// ── Leaderboard ───────────────────────────────────────────────
-function Leaderboard({ allPredictions, results, currentUser }) {
-  const scores = {};
-  allPredictions.forEach(({ user, round, prediction }) => {
-    const s = calcScore(prediction, results[round]);
-    if (s !== null) scores[user] = (scores[user] || 0) + s;
-  });
-  const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
-  if (sorted.length === 0) return null;
-
-  return (
-    <div style={{
-      background: "#0d1117", border: "1px solid #1f2937",
-      borderRadius: 14, padding: "16px", marginBottom: 16,
-    }}>
-      <div style={{ fontSize: 10, color: "#6b7280", letterSpacing: 2, marginBottom: 12, fontFamily: "monospace" }}>🏆 PAPAN SKOR</div>
-      {sorted.map(([user, score], i) => {
-        const isMe = user === currentUser;
-        const medal = ["🥇","🥈","🥉"][i] || `${i+1}.`;
-        return (
-          <div key={user} style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "9px 12px", borderRadius: 8, marginBottom: 4,
-            background: isMe ? "#ef444415" : "transparent",
-            border: `1px solid ${isMe ? "#ef444430" : "transparent"}`,
-          }}>
-            <span style={{ fontSize: 16, minWidth: 22 }}>{medal}</span>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: isMe ? 700 : 500 }}>
-              {user} {isMe && <span style={{ fontSize: 10, color: "#ef4444" }}>(kamu)</span>}
-            </span>
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: i === 0 ? "#fbbf24" : isMe ? "#ef4444" : "#9ca3af" }}>{score}</span>
-              <span style={{ fontSize: 10, color: "#4b5563" }}> pts</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────
+// ── Main page ────────────────────────────────────────────────
 export default function PredictPage() {
-  const [userName, setUserName]   = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [picker,   setPicker]     = useState(null); // posIdx yang sedang dibuka
-  const [schedule, setSchedule]   = useState([]);
-  const [results,  setResults]    = useState({});
-  const [myPreds,  setMyPreds]    = useState({});
-  const [allPreds, setAllPreds]   = useState([]);
-  const [active,   setActive]     = useState(null);
-  const [loading,  setLoading]    = useState(true);
-  const [saving,   setSaving]     = useState(false);
-  const [saved,    setSaved]      = useState(false);
+  const [schedule,    setSchedule]    = useState([]);
+  const [results,     setResults]     = useState({});
+  const [predictions, setPreds]       = useState({});
+  const [activeRound, setActive]      = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+  const [playerName,  setPlayerName]  = useState("");
+  const [nameInput,   setNameInput]   = useState("");
+  const [showSetup,   setShowSetup]   = useState(false);
+  const [picker,      setPicker]      = useState(null); // { round, posIdx }
 
   useEffect(() => {
-    const name = localStorage.getItem("f1-username");
-    if (name) setUserName(name);
-    else setShowModal(true);
-  }, []);
+    const name = localStorage.getItem("f1-player-name") || "";
+    setPlayerName(name);
+    setNameInput(name);
+    if (!name) setShowSetup(true);
 
-  useEffect(() => {
-    fetch("/api/schedule").then(r=>r.json())
-      .then(j => { if (j.success) setSchedule(j.data); })
+    fetch("/api/schedule")
+      .then(r => r.json())
+      .then(json => { if (json.success) setSchedule(json.data); })
       .finally(() => setLoading(false));
   }, []);
 
+  // Load prediksi dari Redis setelah tahu player name
   useEffect(() => {
-    if (!userName) return;
-    schedule.forEach(race => {
-      fetch(`/api/predict?round=${race.round}&user=${encodeURIComponent(userName)}`)
-        .then(r=>r.json()).then(j => {
-          if (j.success && j.data?.prediction)
-            setMyPreds(p => ({ ...p, [race.round]: j.data.prediction }));
-        });
-    });
-  }, [userName, schedule]);
+    if (!playerName) return;
+    fetch(`/api/predictions?player=${encodeURIComponent(playerName)}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.data) {
+          const formatted = {};
+          Object.entries(json.data).forEach(([round, val]) => {
+            formatted[round] = val?.picks || val || [];
+          });
+          setPreds(formatted);
+        }
+      });
+  }, [playerName]);
 
+  // Fetch hasil race finished
   useEffect(() => {
-    schedule.filter(r=>r.status==="finished").forEach(race => {
-      if (!results[race.round]) {
-        fetch(`/api/race?round=${race.round}&session=race`).then(r=>r.json()).then(j => {
-          if (j.success && j.data?.results) {
-            const top5 = j.data.results.slice(0,5).map(r=>r.driver?.id);
-            setResults(p => ({ ...p, [race.round]: top5 }));
+    const finished = schedule.filter(r => r.status === "finished");
+    finished.forEach(race => {
+      if (results[race.round]) return;
+      fetch(`/api/race?round=${race.round}&session=race`)
+        .then(r => r.json())
+        .then(json => {
+          if (json.success && json.data?.results) {
+            const top5 = json.data.results.slice(0, 5).map(r => r.driver?.id);
+            setResults(prev => ({ ...prev, [race.round]: top5 }));
           }
         });
-      }
-      fetch(`/api/predict?round=${race.round}`).then(r=>r.json()).then(j => {
-        if (j.success && j.data?.length > 0)
-          setAllPreds(p => [...p.filter(x=>x.round!==race.round), ...j.data.map(x=>({...x, round:race.round}))]);
-      });
     });
   }, [schedule]);
 
-  function handleConfirmName(name) {
-    setUserName(name);
-    localStorage.setItem("f1-username", name);
-    setShowModal(false);
+  function saveName() {
+    const name = nameInput.trim();
+    if (!name) return;
+    localStorage.setItem("f1-player-name", name);
+    setPlayerName(name);
+    setShowSetup(false);
   }
 
-  function pickDriver(round, posIdx, driverId) {
-    setMyPreds(prev => {
-      const cur = [...(prev[round] || [null,null,null,null,null])];
-      const ex  = cur.indexOf(driverId);
-      if (driverId && ex !== -1 && ex !== posIdx) cur[ex] = null;
-      cur[posIdx] = driverId || null;
-      return { ...prev, [round]: cur };
+  async function setPick(round, posIdx, driverId) {
+    if (!playerName) { setShowSetup(true); return; }
+
+    setPreds(prev => {
+      const picks = [...(prev[round] || [null, null, null, null, null])];
+      // Cegah duplikat
+      const existingIdx = picks.indexOf(driverId);
+      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
+      picks[posIdx] = driverId || null;
+      return { ...prev, [round]: picks };
     });
-    setPicker(null);
-  }
 
-  async function savePrediction(round) {
-    if (!userName) return;
+    // Auto-save ke Redis
     setSaving(true);
     try {
-      await fetch("/api/predict", {
+      const picks = [...(predictions[round] || [null, null, null, null, null])];
+      const existingIdx = picks.indexOf(driverId);
+      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
+      picks[posIdx] = driverId || null;
+
+      await fetch("/api/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: userName, round, prediction: myPreds[round] || [null,null,null,null,null] }),
+        body: JSON.stringify({ player: playerName, round, picks }),
       });
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } finally { setSaving(false); }
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Save failed:", e);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const races      = schedule.filter(r => r.status === "upcoming" || r.status === "finished");
-  const totalScore = Object.entries(myPreds).reduce((sum, [round, pred]) => {
-    return sum + (calcScore(pred, results[parseInt(round)]) || 0);
+  const totalScore = Object.entries(predictions).reduce((sum, [round, picks]) => {
+    const actual = results[parseInt(round)];
+    const score  = calcScore(picks, actual);
+    return sum + (score || 0);
   }, 0);
+
+  const races = schedule.filter(r =>
+    r.status === "upcoming" ||
+    (r.status === "finished" && predictions[r.round]?.some(p => p))
+  );
 
   return (
     <div>
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse  { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
-        .pick-btn:active { opacity: 0.7; }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse   { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
       `}</style>
 
-      {showModal && <NameModal onConfirm={handleConfirmName} />}
-      {picker !== null && active !== null && (
+      {/* Setup name modal */}
+      {showSetup && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
+          zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20,
+        }}>
+          <div style={{
+            background: "#0d1117", border: "1px solid #1f2937",
+            borderRadius: 16, padding: 24, width: "100%", maxWidth: 360,
+          }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>👋</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Siapa nama kamu?</div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+              Nama ini akan muncul di papan skor bersama.
+            </div>
+            <input
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && saveName()}
+              placeholder="Contoh: arsa"
+              style={{
+                width: "100%", background: "#1a1f2e", border: "1px solid #1f2937",
+                borderRadius: 10, padding: "10px 14px",
+                color: "#f9fafb", fontSize: 14, fontFamily: "inherit",
+                outline: "none", marginBottom: 12,
+              }}
+            />
+            <button
+              onClick={saveName}
+              style={{
+                width: "100%", background: "#ef4444", border: "none",
+                borderRadius: 10, padding: "11px", color: "#fff",
+                fontSize: 14, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Simpan & Mulai
+            </button>
+            {playerName && (
+              <button
+                onClick={() => setShowSetup(false)}
+                style={{
+                  width: "100%", background: "transparent", border: "none",
+                  padding: "8px", color: "#6b7280", fontSize: 12,
+                  cursor: "pointer", marginTop: 8,
+                }}
+              >
+                Batal
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Driver Picker */}
+      {picker && (
         <DriverPicker
-          posIdx={picker}
-          selected={(myPreds[active] || []).filter(Boolean)}
-          onPick={id => pickDriver(active, picker, id)}
+          open={!!picker}
           onClose={() => setPicker(null)}
-          disabled={schedule.find(r=>r.round===active)?.status === "finished"}
+          onSelect={driverId => setPick(picker.round, picker.posIdx, driverId)}
+          selected={predictions[picker.round]?.[picker.posIdx]}
+          disabledIds={(predictions[picker.round] || []).filter(Boolean)}
+          posLabel={POSITIONS[picker.posIdx].label}
         />
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 6, fontFamily: "monospace" }}>🎯 PREDIKSI</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 8, fontFamily: "monospace" }}>
+          🎯 PREDIKSI
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4 }}>Tebak Top 5</h1>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {userName && <span style={{ fontSize: 12, color: "#6b7280" }}>
-                Sebagai <strong style={{ color: "#ef4444" }}>{userName}</strong>
-              </span>}
-              <button onClick={() => setShowModal(true)} style={{
-                fontSize: 10, color: "#4b5563", background: "transparent",
-                border: "1px solid #1f2937", borderRadius: 6,
-                padding: "2px 8px", cursor: "pointer", fontFamily: "inherit",
-              }}>Ganti nama</button>
-            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, marginBottom: 4 }}>
+              Tebak Podium
+            </h1>
+            <p style={{ fontSize: 12, color: "#6b7280" }}>
+              Tebak P1–P5 sebelum race dimulai
+            </p>
           </div>
-          {totalScore > 0 && (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>{totalScore}</div>
-              <div style={{ fontSize: 9, color: "#6b7280" }}>TOTAL POIN</div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            {totalScore > 0 && (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>{totalScore}</div>
+                <div style={{ fontSize: 9, color: "#6b7280" }}>TOTAL POIN</div>
+              </div>
+            )}
+            {/* Player name + change */}
+            <div style={{
+              background: "#0d1117", border: "1px solid #1f2937",
+              borderRadius: 10, padding: "8px 12px",
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>👤</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#f9fafb" }}>
+                {playerName || "—"}
+              </span>
+              <button
+                onClick={() => setShowSetup(true)}
+                style={{
+                  background: "none", border: "none",
+                  fontSize: 10, color: "#4b5563", cursor: "pointer", padding: 0,
+                }}
+              >
+                ganti
+              </button>
             </div>
-          )}
+            <Link href="/leaderboard" style={{
+              background: "#1a1f2e", border: "1px solid #1f2937",
+              borderRadius: 10, padding: "8px 14px",
+              fontSize: 12, fontWeight: 700, color: "#f9fafb",
+              textDecoration: "none", display: "flex", alignItems: "center", gap: 6,
+            }}>
+              🏆 Papan Skor
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Scoring guide */}
       <div style={{
         background: "#0d1117", border: "1px solid #1f2937",
-        borderRadius: 10, padding: "10px 14px", marginBottom: 14,
-        display: "flex", gap: 14, flexWrap: "wrap", fontSize: 11, color: "#6b7280",
+        borderRadius: 12, padding: "10px 14px", marginBottom: 20,
+        display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: "#6b7280",
       }}>
-        <span>🎯 Tepat posisi = <strong style={{color:"#22c55e"}}>3 pts</strong></span>
-        <span>✅ Ada di top 5 = <strong style={{color:"#fbbf24"}}>1 pt</strong></span>
-        <span>❌ Meleset = <strong style={{color:"#ef4444"}}>0</strong></span>
+        <span>🎯 Posisi tepat = <strong style={{ color: "#22c55e" }}>3 poin</strong></span>
+        <span>✅ Ada di top 5 = <strong style={{ color: "#fbbf24" }}>1 poin</strong></span>
+        <span>❌ Meleset = <strong style={{ color: "#ef4444" }}>0 poin</strong></span>
+        <span style={{ marginLeft: "auto", color: "#374151" }}>maks 15 poin/race</span>
       </div>
 
-      {/* Leaderboard */}
-      <Leaderboard allPredictions={allPreds} results={results} currentUser={userName} />
+      {/* Auto-save status */}
+      {(saving || saved) && (
+        <div style={{
+          fontSize: 11, color: saving ? "#fbbf24" : "#22c55e",
+          marginBottom: 12, fontFamily: "monospace",
+        }}>
+          {saving ? "⏳ Menyimpan..." : "✓ Tersimpan"}
+        </div>
+      )}
 
       {/* Race list */}
       {loading ? (
-        <div style={{ display: "grid", gap: 8 }}>
-          {[...Array(3)].map((_,i) => (
-            <div key={i} style={{ height: 72, background: "#0d1117", borderRadius: 12, animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ display: "grid", gap: 10 }}>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} style={{ height: 80, background: "#0d1117", borderRadius: 12, animation: "pulse 1.5s ease infinite" }} />
           ))}
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 8 }}>
-          {races.map((race, ri) => {
+        <div style={{ display: "grid", gap: 12 }}>
+          {races.map((race, i) => {
             const isFinished = race.status === "finished";
-            const pred       = myPreds[race.round] || [null,null,null,null,null];
-            const actual     = results[race.round];
-            const score      = isFinished ? calcScore(pred, actual) : null;
-            const isOpen     = active === race.round;
-            const hasPred    = pred.some(p => p);
-            const otherPreds = allPreds.filter(p => p.round === race.round && p.user !== userName);
+            const picks  = predictions[race.round] || [null, null, null, null, null];
+            const actual = results[race.round];
+            const score  = isFinished ? calcScore(picks, actual) : null;
+            const isOpen = activeRound === race.round;
 
             return (
-              <div key={race.round} style={{ animation: `fadeUp 0.25s ease ${ri*40}ms both` }}>
-                {/* Row header */}
+              <div key={race.round} style={{ animation: `fadeUp 0.3s ease ${i * 40}ms both` }}>
+                {/* Race header */}
                 <div
                   onClick={() => setActive(isOpen ? null : race.round)}
                   style={{
                     background: isOpen ? "#0f1420" : "#0d1117",
                     border: `1px solid ${isOpen ? "#1f2937" : "#1a1f2e"}`,
                     borderRadius: isOpen ? "12px 12px 0 0" : 12,
-                    padding: "13px 14px", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 10,
-                    userSelect: "none",
+                    padding: "14px 16px", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 12,
+                    transition: "background 0.15s",
                   }}
                 >
-                  <span style={{ fontSize: 20 }}>{getCountryFlag(race.circuit.country)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      R{race.round} · {race.name.replace(" Grand Prix", " GP")}
-                    </div>
+                  <span style={{ fontSize: 20 }}>{getCountryFlag(race.circuit?.country)}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>R{race.round} · {race.name}</div>
                     <div style={{ fontSize: 11, color: "#4b5563" }}>
-                      {new Date(race.date).toLocaleDateString("id-ID", { day:"numeric", month:"long" })}
+                      {new Date(race.date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                    {isFinished && score !== null && (
-                      <div style={{
-                        background: score >= 9 ? "#22c55e20" : score >= 4 ? "#fbbf2420" : "#ef444420",
-                        border: `1px solid ${score >= 9 ? "#22c55e44" : score >= 4 ? "#fbbf2444" : "#ef444444"}`,
-                        borderRadius: 8, padding: "4px 10px", textAlign: "center",
-                      }}>
-                        <div style={{ fontSize: 15, fontWeight: 900, color: score >= 9 ? "#22c55e" : score >= 4 ? "#fbbf24" : "#ef4444", lineHeight: 1 }}>{score}</div>
-                        <div style={{ fontSize: 8, color: "#6b7280" }}>pts</div>
-                      </div>
-                    )}
-                    {!isFinished && hasPred && <span style={{ fontSize: 11, color: "#22c55e" }}>✓</span>}
-                    {!isFinished && !hasPred && <span style={{ fontSize: 11, color: "#fbbf24" }}>Isi</span>}
-                    <span style={{
-                      fontSize: 10, color: "#374151",
-                      display: "inline-block", transition: "transform 0.2s",
-                      transform: isOpen ? "rotate(180deg)" : "none",
-                    }}>▼</span>
-                  </div>
+
+                  {isFinished && score !== null && (
+                    <div style={{
+                      background: score >= 12 ? "#22c55e20" : score >= 6 ? "#fbbf2420" : "#ef444420",
+                      border: `1px solid ${score >= 12 ? "#22c55e44" : score >= 6 ? "#fbbf2444" : "#ef444444"}`,
+                      borderRadius: 8, padding: "4px 12px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: score >= 12 ? "#22c55e" : score >= 6 ? "#fbbf24" : "#ef4444" }}>{score}</div>
+                      <div style={{ fontSize: 9, color: "#6b7280" }}>/ 15 PTS</div>
+                    </div>
+                  )}
+                  {!isFinished && picks.some(p => p) && (
+                    <span style={{ fontSize: 11, color: "#22c55e" }}>✓ Sudah ditebak</span>
+                  )}
+                  {!isFinished && !picks.some(p => p) && (
+                    <span style={{ fontSize: 11, color: "#fbbf24" }}>Belum ditebak</span>
+                  )}
+                  <span style={{
+                    fontSize: 10, color: "#374151",
+                    display: "inline-block", transition: "transform 0.2s",
+                    transform: isOpen ? "rotate(180deg)" : "none",
+                  }}>▼</span>
                 </div>
 
-                {/* Expanded */}
+                {/* Picks form */}
                 {isOpen && (
                   <div style={{
                     background: "#090a0f",
                     border: "1px solid #1f2937", borderTop: "none",
-                    borderRadius: "0 0 12px 12px", padding: "14px",
+                    borderRadius: "0 0 12px 12px",
+                    padding: "16px 18px",
                   }}>
-                    <div style={{ fontSize: 10, color: "#6b7280", letterSpacing: 1, marginBottom: 10, fontFamily: "monospace" }}>
-                      PREDIKSIMU — TAP UNTUK PILIH DRIVER
-                    </div>
-
-                    {/* 5 position buttons */}
-                    <div style={{ display: "grid", gap: 6, marginBottom: 14 }}>
-                      {POS_LABELS.map((pos, posIdx) => {
-                        const driverId = pred[posIdx];
-                        const drv      = DRIVERS_2026.find(d => d.id === driverId);
-                        const color    = drv ? getTeamColor(drv.team) : POS_COLORS[posIdx];
+                    <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
+                      {POSITIONS.map(({ label, emoji }, posIdx) => {
+                        const driverId = picks[posIdx];
+                        const driver   = DRIVERS_2026.find(d => d.id === driverId);
                         const actualId = actual?.[posIdx];
                         const isCorrect  = isFinished && driverId === actualId;
                         const isOnTop5   = isFinished && driverId && actual?.includes(driverId);
-                        const actualDrv  = DRIVERS_2026.find(d => d.id === actualId);
+                        const color      = driver ? getTeamColor(driver.team) : "#374151";
 
                         return (
-                          <div key={posIdx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            {/* Position label */}
-                            <div style={{
-                              width: 32, flexShrink: 0, fontSize: 11, fontWeight: 700,
-                              color: POS_COLORS[posIdx], textAlign: "center",
-                            }}>{pos.split(" ")[0]}<br/><span style={{ fontSize: 14 }}>{pos.split(" ")[1] || ""}</span></div>
-
-                            {/* Pick button */}
-                            <div
-                              className="pick-btn"
-                              onClick={() => !isFinished && setPicker(posIdx)}
-                              style={{
-                                flex: 1, padding: "10px 12px", borderRadius: 9,
-                                background: drv ? color + "18" : "#0d1117",
-                                border: `1px solid ${isCorrect ? "#22c55e55" : isOnTop5 ? "#fbbf2455" : isFinished && driverId ? "#ef444433" : drv ? color + "44" : "#1f2937"}`,
-                                cursor: isFinished ? "default" : "pointer",
-                                display: "flex", alignItems: "center", gap: 8,
-                                minHeight: 44,
-                              }}
-                            >
-                              {drv ? (
+                          <div
+                            key={posIdx}
+                            onClick={() => !isFinished && setPicker({ round: race.round, posIdx })}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 10,
+                              background: driver ? color + "10" : "#0d1117",
+                              border: `1px solid ${isCorrect ? "#22c55e44" : isOnTop5 ? "#fbbf2444" : isFinished && driverId ? "#ef444433" : driver ? color + "30" : "#1f2937"}`,
+                              borderRadius: 10, padding: "10px 14px",
+                              cursor: isFinished ? "default" : "pointer",
+                              transition: "background 0.1s",
+                            }}
+                          >
+                            <div style={{ fontSize: 16, minWidth: 24 }}>{emoji}</div>
+                            <div style={{ flex: 1 }}>
+                              {driver ? (
                                 <>
-                                  <span style={{ fontSize: 14 }}>{getFlag(drv.nationality)}</span>
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color }}>{drv.lastName}</div>
-                                    <div style={{ fontSize: 10, color: "#6b7280" }}>{drv.teamName}</div>
-                                  </div>
-                                  <span style={{
-                                    fontSize: 11,
-                                    color: isCorrect ? "#22c55e" : isOnTop5 ? "#fbbf24" : isFinished ? "#ef4444" : "#4b5563",
-                                  }}>
-                                    {isCorrect ? "🎯+3" : isOnTop5 ? "✅+1" : isFinished && driverId ? "❌" : drv.num}
-                                  </span>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color }}>{driver.firstName} {driver.lastName}</div>
+                                  <div style={{ fontSize: 10, color: "#4b5563" }}>{driver.teamName}</div>
                                 </>
                               ) : (
-                                <span style={{ fontSize: 12, color: "#374151" }}>
-                                  {isFinished ? "—" : "Tap untuk pilih driver"}
-                                </span>
+                                <div style={{ fontSize: 13, color: "#374151" }}>— Pilih driver</div>
                               )}
                             </div>
-
-                            {/* Actual result */}
-                            {isFinished && actualDrv && (
-                              <div style={{ flexShrink: 0, fontSize: 10, color: "#4b5563", textAlign: "center", width: 44 }}>
-                                <div style={{ fontSize: 14 }}>{getFlag(actualDrv.nationality)}</div>
-                                <div>{actualDrv.lastName.slice(0,5)}</div>
+                            {isFinished && (
+                              <div style={{ textAlign: "right", fontSize: 11 }}>
+                                {isCorrect  && <span style={{ color: "#22c55e", fontWeight: 700 }}>✓ +3</span>}
+                                {isOnTop5 && !isCorrect && <span style={{ color: "#fbbf24", fontWeight: 700 }}>≈ +1</span>}
+                                {!isOnTop5 && driverId && <span style={{ color: "#ef4444" }}>✗ +0</span>}
+                                {actualId && (
+                                  <div style={{ fontSize: 10, color: "#4b5563", marginTop: 2 }}>
+                                    Aktual: {DRIVERS_2026.find(d => d.id === actualId)?.lastName || actualId}
+                                  </div>
+                                )}
                               </div>
                             )}
+                            {!isFinished && <span style={{ fontSize: 10, color: "#374151" }}>›</span>}
                           </div>
                         );
                       })}
                     </div>
 
-                    {/* Save button */}
-                    {!isFinished && (
-                      <button
-                        onClick={() => savePrediction(race.round)}
-                        disabled={saving || !hasPred}
-                        style={{
-                          width: "100%", padding: "11px",
-                          background: saved ? "#22c55e" : hasPred ? "#ef4444" : "#1f2937",
-                          border: "none", borderRadius: 10,
-                          color: hasPred ? "#fff" : "#4b5563",
-                          fontSize: 14, fontWeight: 700,
-                          cursor: hasPred ? "pointer" : "not-allowed",
-                          fontFamily: "inherit", marginBottom: 6,
-                        }}
-                      >{saving ? "Menyimpan..." : saved ? "✓ Tersimpan!" : "Simpan Prediksi"}</button>
-                    )}
-
-                    {/* Score summary */}
                     {isFinished && score !== null && (
                       <div style={{
-                        background: "#1a1f2e", borderRadius: 10, padding: "10px 12px",
-                        fontSize: 13, color: "#9ca3af", marginTop: 6,
+                        background: "#1a1f2e", borderRadius: 10, padding: "10px 14px",
+                        fontSize: 13, color: "#9ca3af",
                       }}>
-                        Skor race ini: <strong style={{ color: score >= 9 ? "#22c55e" : score >= 4 ? "#fbbf24" : "#ef4444" }}>{score}/15 poin</strong>
+                        Skor race ini: <strong style={{ color: score >= 12 ? "#22c55e" : score >= 6 ? "#fbbf24" : "#ef4444" }}>{score}/15 poin</strong>
                         {score === 15 && " 🎉 Sempurna!"}
-                        {score >= 9 && score < 15 && " 🔥 Keren!"}
-                        {score >= 4 && score < 9 && " 👍 Lumayan!"}
-                        {score < 4 && " 😅 Nasib!"}
-                      </div>
-                    )}
-
-                    {/* Prediksi orang lain */}
-                    {isFinished && otherPreds.length > 0 && (
-                      <div style={{ marginTop: 14 }}>
-                        <div style={{ fontSize: 10, color: "#374151", letterSpacing: 1, marginBottom: 8, fontFamily: "monospace", borderTop: "1px solid #1a1f2e", paddingTop: 12 }}>
-                          PREDIKSI PEMAIN LAIN
-                        </div>
-                        {otherPreds.map(({ user, prediction: p }) => {
-                          const s = calcScore(p, actual);
-                          return (
-                            <div key={user} style={{
-                              background: "#0d1117", border: "1px solid #1f2937",
-                              borderRadius: 10, padding: "10px 12px", marginBottom: 6,
-                              display: "flex", alignItems: "center", gap: 10,
-                            }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{user}</div>
-                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                                  {p.slice(0,5).map((dId, idx) => {
-                                    const drv = DRIVERS_2026.find(d => d.id === dId);
-                                    const cor = actual?.[idx] === dId;
-                                    const pod = actual?.includes(dId);
-                                    return (
-                                      <span key={idx} style={{
-                                        fontSize: 10, padding: "2px 7px", borderRadius: 5,
-                                        background: cor ? "#22c55e20" : pod ? "#fbbf2420" : "#1f2937",
-                                        color: cor ? "#22c55e" : pod ? "#fbbf24" : "#4b5563",
-                                      }}>P{idx+1} {drv?.lastName?.slice(0,4) || "?"}</span>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                              <div style={{ textAlign: "center", flexShrink: 0 }}>
-                                <div style={{ fontSize: 18, fontWeight: 900, color: s >= 9 ? "#22c55e" : s >= 4 ? "#fbbf24" : "#6b7280" }}>{s}</div>
-                                <div style={{ fontSize: 9, color: "#4b5563" }}>pts</div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                        {score >= 10 && score < 15 && " 🔥 Bagus banget!"}
+                        {score >= 5 && score < 10 && " 👍 Lumayan!"}
+                        {score < 5 && " 😅 Coba lagi!"}
                       </div>
                     )}
                   </div>
@@ -559,14 +538,17 @@ export default function PredictPage() {
             );
           })}
 
-          {races.length === 0 && !loading && (
+          {races.length === 0 && (
             <div style={{
-              textAlign: "center", padding: "50px 20px",
-              background: "#0d1117", borderRadius: 14, border: "1px solid #1f2937",
+              textAlign: "center", padding: "60px 20px",
+              background: "#0d1117", borderRadius: 14,
+              border: "1px solid #1f2937",
             }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>🎯</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Siapkan prediksimu!</div>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>Australian GP · 8 Maret 2026</div>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Siapkan prediksimu!</div>
+              <div style={{ fontSize: 13, color: "#6b7280" }}>
+                Race pertama musim ini segera dimulai.<br />Australian GP · 8 Maret 2026
+              </div>
             </div>
           )}
         </div>

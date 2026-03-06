@@ -1,20 +1,25 @@
 "use client";
 // src/components/Navbar.jsx
+// Desktop: top navbar | Mobile: bottom tab bar
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV = [
-  { href: "/",          label: "Home",     icon: "🏠" },
-  { href: "/standings", label: "Klasemen", icon: "🏆" },
-  { href: "/schedule",  label: "Kalender", icon: "📅" },
-  { href: "/drivers",   label: "Driver",   icon: "🧑‍✈️" },
-  { href: "/chart",     label: "Grafik",   icon: "📈" },
-  { href: "/predict",   label: "Prediksi", icon: "🎯" },
+const LINKS = [
+  { href: "/",            label: "Home",      icon: "🏠" },
+  { href: "/standings",   label: "Klasemen",  icon: "🏆" },
+  { href: "/schedule",    label: "Kalender",  icon: "📅" },
+  { href: "/drivers",     label: "Driver",    icon: "🧑‍✈️" },
+  { href: "/chart",       label: "Grafik",    icon: "📈" },
+  { href: "/predict",     label: "Prediksi",  icon: "🎯" },
+  { href: "/leaderboard", label: "Skor",      icon: "🏅" },
 ];
 
 export default function Navbar() {
-  const path = usePathname();
+  const pathname = usePathname();
+
+  const isActive = (href) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
@@ -32,89 +37,97 @@ export default function Navbar() {
         }
       `}</style>
 
-      {/* ── Desktop top navbar ── */}
+      {/* ── DESKTOP TOP NAVBAR ── */}
       <nav className="desktop-nav" style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(8,9,15,0.95)", backdropFilter: "blur(20px)",
+        background: "#050507",
         borderBottom: "1px solid #1a1f2e",
-        padding: "0 20px", height: 56,
-        alignItems: "center", gap: 4,
+        padding: "0 24px",
+        alignItems: "center",
+        gap: 0,
+        position: "sticky", top: 0, zIndex: 100,
       }}>
-        <Link href="/" style={{ textDecoration: "none", flexShrink: 0, marginRight: 12 }}>
-          <div style={{ fontWeight: 900, fontSize: 20 }}>
-            <span style={{ color: "#ef4444" }}>F1</span>
-            <span style={{ color: "#6b7280", fontSize: 12, fontWeight: 400, marginLeft: 5 }}>HUB</span>
-          </div>
+        {/* Logo */}
+        <Link href="/" style={{
+          textDecoration: "none", display: "flex", alignItems: "center", gap: 6,
+          marginRight: 28, padding: "14px 0",
+        }}>
+          <span style={{ fontSize: 18, fontWeight: 900, color: "#ef4444", fontFamily: "monospace" }}>F1</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#f9fafb", letterSpacing: 1 }}>HUB</span>
         </Link>
-        <div style={{ display: "flex", gap: 1, flex: 1 }}>
-          {NAV.map(n => {
-            const active = path === n.href || (n.href !== "/" && path.startsWith(n.href));
+
+        {/* Links */}
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+          {LINKS.map(({ href, label, icon }) => {
+            const active = isActive(href);
             return (
-              <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
-                <div style={{
-                  padding: "6px 12px", borderRadius: 8,
-                  fontSize: 12, fontWeight: active ? 700 : 500,
-                  color: active ? "#ef4444" : "#6b7280",
-                  borderBottom: active ? "2px solid #ef4444" : "2px solid transparent",
-                  whiteSpace: "nowrap",
-                }}>{n.icon} {n.label}</div>
+              <Link key={href} href={href} style={{
+                textDecoration: "none",
+                padding: "14px 12px",
+                fontSize: 13, fontWeight: active ? 700 : 400,
+                color: active ? "#ef4444" : "#6b7280",
+                borderBottom: `2px solid ${active ? "#ef4444" : "transparent"}`,
+                transition: "color 0.15s, border-color 0.15s",
+                whiteSpace: "nowrap",
+                display: "flex", alignItems: "center", gap: 5,
+              }}>
+                <span style={{ fontSize: 14 }}>{icon}</span>
+                {label}
               </Link>
             );
           })}
         </div>
+
+        {/* Year */}
+        <div style={{ fontSize: 11, color: "#374151", fontFamily: "monospace" }}>2026</div>
       </nav>
 
-      {/* ── Mobile top mini bar ── */}
+      {/* ── MOBILE MINI HEADER ── */}
       <div className="mobile-header" style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(8,9,15,0.97)", backdropFilter: "blur(20px)",
+        background: "#050507",
         borderBottom: "1px solid #1a1f2e",
-        height: 48, alignItems: "center", justifyContent: "center",
+        padding: "10px 16px",
+        alignItems: "center",
+        justifyContent: "space-between",
+        position: "sticky", top: 0, zIndex: 100,
       }}>
-        <span style={{ fontWeight: 900, fontSize: 20 }}>
-          <span style={{ color: "#ef4444" }}>F1</span>
-          <span style={{ color: "#4b5563", fontSize: 12, fontWeight: 400, marginLeft: 5 }}>HUB · {new Date().getFullYear()}</span>
-        </span>
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 16, fontWeight: 900, color: "#ef4444", fontFamily: "monospace" }}>F1</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#f9fafb", letterSpacing: 1 }}>HUB</span>
+        </Link>
+        <span style={{ fontSize: 10, color: "#374151", fontFamily: "monospace" }}>2026</span>
       </div>
 
-      {/* ── Mobile bottom tab bar ── */}
+      {/* ── MOBILE BOTTOM TAB BAR ── */}
       <nav className="mobile-bottom-nav" style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(8,9,15,0.98)", backdropFilter: "blur(24px)",
+        background: "#050507",
         borderTop: "1px solid #1a1f2e",
-        height: 60,
-        alignItems: "stretch",
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        padding: "8px 0 calc(8px + env(safe-area-inset-bottom))",
+        justifyContent: "space-around", alignItems: "center",
       }}>
-        {NAV.map(n => {
-          const active = path === n.href || (n.href !== "/" && path.startsWith(n.href));
+        {LINKS.map(({ href, label, icon }) => {
+          const active = isActive(href);
           return (
-            <Link key={n.href} href={n.href} style={{ textDecoration: "none", flex: 1 }}>
-              <div style={{
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                height: "100%", gap: 2, position: "relative",
-              }}>
-                {active && (
-                  <div style={{
-                    position: "absolute", top: 0, left: "20%", right: "20%",
-                    height: 2, background: "#ef4444", borderRadius: "0 0 2px 2px",
-                  }} />
-                )}
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{n.icon}</span>
-                <span style={{
-                  fontSize: 9, fontWeight: active ? 700 : 400,
-                  color: active ? "#ef4444" : "#4b5563",
-                  letterSpacing: 0.2,
-                }}>{n.label}</span>
-              </div>
+            <Link key={href} href={href} style={{
+              textDecoration: "none",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+              padding: "2px 6px", minWidth: 44,
+              borderTop: `2px solid ${active ? "#ef4444" : "transparent"}`,
+              paddingTop: 6,
+            }}>
+              <span style={{ fontSize: 18 }}>{icon}</span>
+              <span style={{
+                fontSize: 9, fontWeight: active ? 700 : 400,
+                color: active ? "#ef4444" : "#4b5563",
+                letterSpacing: 0.3,
+              }}>{label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Spacer so content not hidden behind bottom nav */}
-      <div className="mobile-spacer" style={{ height: 60 }} />
+      {/* Spacer for bottom nav */}
+      <div className="mobile-spacer" style={{ height: 70 }} />
     </>
   );
 }
