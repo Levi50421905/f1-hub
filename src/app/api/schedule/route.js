@@ -1,7 +1,7 @@
 // app/api/schedule/route.js
 import { getSchedule } from "@/lib/f1api";
 
-export const revalidate = 86400; // revalidate tiap 24 jam (jadwal jarang berubah)
+export const revalidate = 0; // revalidate tiap 24 jam (jadwal jarang berubah)
 
 export async function GET(request) {
   try {
