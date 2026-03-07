@@ -89,15 +89,18 @@ export default function RaceDetailPage() {
 
   // Fetch data saat tab berubah
   useEffect(() => {
-    if (!raceInfo || raceInfo.status !== "finished") return;
+    if (!raceInfo) return;
+    const isFinished = raceInfo.status === "finished";
 
-    if (tab === "race" && !raceData) {
+    // Race & pit stops hanya kalau race sudah selesai
+    if (tab === "race" && !raceData && isFinished) {
       setLoading(true);
       fetch(`/api/race?round=${roundNum}&session=race`)
         .then(r => r.json())
         .then(json => { if (json.success) setRaceData(json.data); })
         .finally(() => setLoading(false));
     }
+    // Qualifying: fetch kapanpun — bisa sudah ada meski race belum
     if (tab === "quali" && !qualiData) {
       setLoading(true);
       fetch(`/api/race?round=${roundNum}&session=qualifying`)
@@ -105,7 +108,7 @@ export default function RaceDetailPage() {
         .then(json => { if (json.success) setQualiData(json.data); })
         .finally(() => setLoading(false));
     }
-    if (tab === "pits" && !pitData) {
+    if (tab === "pits" && !pitData && isFinished) {
       setLoading(true);
       fetch(`/api/race?round=${roundNum}&session=pitstops`)
         .then(r => r.json())
@@ -318,7 +321,7 @@ export default function RaceDetailPage() {
 
         {/* Qualifying results */}
         {!loading && tab === "quali" && (
-          isFinished && qualiData?.results ? (
+          qualiData?.results ? (
             <table style={S.table}>
               <thead>
                 <tr>
@@ -331,12 +334,12 @@ export default function RaceDetailPage() {
               </thead>
               <tbody>
                 {qualiData.results.map((r, i) => {
-                  const color = getTeamColor(r.driver?.team);
+                  const color = getTeamColor(r.team?.id || r.team?.name);
                   return (
                     <tr key={i} style={S.tr(i)}>
-                      <td style={{ ...S.td, fontWeight: 900, color: i < 3 ? "#fbbf24" : "#9ca3af", width: 40 }}>{r.position}</td>
+                      <td style={{ ...S.td, fontWeight: 900, color: i < 3 ? "#fbbf24" : "#9ca3af", width: 40 }}>{r.pos}</td>
                       <td style={{ ...S.td, fontWeight: 600, color }}>
-                        {r.driver?.firstName?.charAt(0)}. {r.driver?.lastName}
+                        {r.driver?.name || `${r.driver?.firstName?.charAt(0)}. ${r.driver?.lastName}`}
                       </td>
                       {["q1","q2","q3"].map(q => (
                         <td key={q} style={{ ...S.td, fontSize: 11, color: "#6b7280", fontFamily: "monospace" }}>
@@ -348,10 +351,8 @@ export default function RaceDetailPage() {
                 })}
               </tbody>
             </table>
-          ) : !isFinished ? (
-            <div style={S.noData}>Hasil qualifying akan muncul setelah sesi selesai.</div>
           ) : (
-            <div style={S.noData}>Data qualifying tidak tersedia.</div>
+            <div style={S.noData}>Hasil qualifying belum tersedia.</div>
           )
         )}
 
