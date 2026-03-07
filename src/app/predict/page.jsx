@@ -209,23 +209,18 @@ export default function PredictPage() {
   async function setPick(round, posIdx, driverId) {
     if (!playerName) { setShowSetup(true); return; }
 
-    setPreds(prev => {
-      const picks = [...(prev[round] || [null, null, null, null, null])];
-      // Cegah duplikat
-      const existingIdx = picks.indexOf(driverId);
-      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
-      picks[posIdx] = driverId || null;
-      return { ...prev, [round]: picks };
-    });
+    // Hitung picks baru dulu sebelum setState
+    const picks = [...(predictions[round] || [null, null, null, null, null])];
+    const existingIdx = picks.indexOf(driverId);
+    if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
+    picks[posIdx] = driverId || null;
 
-    // Auto-save ke Redis
+    // Update state lokal
+    setPreds(prev => ({ ...prev, [round]: picks }));
+
+    // Auto-save ke Redis dengan picks yang sama (bukan state lama)
     setSaving(true);
     try {
-      const picks = [...(predictions[round] || [null, null, null, null, null])];
-      const existingIdx = picks.indexOf(driverId);
-      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
-      picks[posIdx] = driverId || null;
-
       await fetch("/api/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
