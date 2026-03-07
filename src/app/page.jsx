@@ -6,23 +6,18 @@ import Link from "next/link";
 import { getTeamColor, getFlag, getCountryFlag } from "@/lib/teamColors";
 import { SCHEDULE_2026 } from "@/lib/schedule2026";
 
-function toWIB(dateStr, timeStr) {
+function fmtWIB(dateStr, timeStr) {
   if (!dateStr) return null;
   try {
-    const raw   = `${dateStr}T${timeStr || "00:00:00Z"}`;
-    const clean = raw.endsWith("Z") ? raw : raw + "Z";
-    const dt    = new Date(clean);
-    return isNaN(dt) ? null : new Date(dt.getTime() + 7 * 60 * 60 * 1000);
+    const t  = (timeStr || "00:00:00").replace(/Z?$/, "Z");
+    const dt = new Date(`${dateStr}T${t}`);
+    if (isNaN(dt)) return null;
+    return dt.toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      weekday: "short", day: "numeric", month: "short",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }) + " WIB";
   } catch { return null; }
-}
-
-function fmtWIB(dateStr, timeStr) {
-  const dt = toWIB(dateStr, timeStr);
-  if (!dt) return null;
-  return dt.toLocaleString("id-ID", {
-    weekday: "short", day: "numeric", month: "short",
-    hour: "2-digit", minute: "2-digit", hour12: false,
-  }) + " WIB";
 }
 
 export default function HomePage() {
