@@ -1,28 +1,34 @@
 "use client";
-// src/app/schedule/page.jsx — v2
+// src/app/schedule/page.jsx — mobile optimized
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getCountryFlag } from "@/lib/teamColors";
 import { SCHEDULE_2026 } from "@/lib/schedule2026";
 
+// Format compact: "Sab 7/3 · 19:00 WIB"
+// Pakai timezone Asia/Jakarta langsung — tidak perlu +7 manual
+function fmtCompact(dateStr, timeStr) {
+  if (!dateStr) return "TBA";
+  try {
+    const t   = (timeStr || "00:00:00").replace(/Z?$/, "Z");
+    const dt  = new Date(`${dateStr}T${t}`);
+    if (isNaN(dt)) return "TBA";
+    const opts = { timeZone: "Asia/Jakarta", weekday: "short", day: "numeric", month: "numeric" };
+    const day  = dt.toLocaleDateString("id-ID", opts);
+    const time = dt.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${day} · ${time} WIB`;
+  } catch { return "TBA"; }
+}
+
+// isPast check
 function toWIB(dateStr, timeStr) {
   if (!dateStr) return null;
   try {
-    const raw   = `${dateStr}T${timeStr || "00:00:00Z"}`;
-    const clean = raw.endsWith("Z") ? raw : raw + "Z";
-    const dt    = new Date(clean);
-    return isNaN(dt) ? null : new Date(dt.getTime() + 7 * 60 * 60 * 1000);
+    const t   = (timeStr || "00:00:00").replace(/Z?$/, "Z");
+    const dt  = new Date(`${dateStr}T${t}`);
+    return isNaN(dt) ? null : dt;
   } catch { return null; }
-}
-
-// Format compact: "Sab 7/3 · 19:00"
-function fmtCompact(dateStr, timeStr) {
-  const dt = toWIB(dateStr, timeStr);
-  if (!dt) return "TBA";
-  const day  = dt.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "numeric" });
-  const time = dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
-  return `${day} · ${time} WIB`;
 }
 
 function getSessions(race) {
