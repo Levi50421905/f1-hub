@@ -1,7 +1,8 @@
-// app/api/schedule/route.js
+// src/app/api/schedule/route.js
 import { getSchedule } from "@/lib/f1api";
 
-export const revalidate = 0; // revalidate tiap 24 jam (jadwal jarang berubah)
+export const dynamic = "force-dynamic"; // bypass semua cache
+export const revalidate = 0;
 
 export async function GET(request) {
   try {
@@ -10,7 +11,6 @@ export async function GET(request) {
 
     const data = await getSchedule(season);
 
-    // Tambahkan status upcoming/finished berdasarkan tanggal hari ini
     const today = new Date();
     const enriched = data.map((race) => ({
       ...race,

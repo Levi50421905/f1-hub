@@ -1,5 +1,5 @@
 "use client";
-// src/app/schedule/page.jsx — mobile optimized
+// src/app/schedule/page.jsx — v2
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
