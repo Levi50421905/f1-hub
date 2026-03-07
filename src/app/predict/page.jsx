@@ -169,7 +169,7 @@ export default function PredictPage() {
   // Load prediksi dari Redis setelah tahu player name
   useEffect(() => {
     if (!playerName) return;
-    fetch(`/api/predictions?player=${encodeURIComponent(playerName)}`)
+    fetch(`/api/predictions?player=${encodeURIComponent(playerName.toLowerCase().trim())}`)
       .then(r => r.json())
       .then(json => {
         if (json.success && json.data) {
@@ -201,26 +201,31 @@ export default function PredictPage() {
   function saveName() {
     const name = nameInput.trim();
     if (!name) return;
-    localStorage.setItem("f1-player-name", name);
-    setPlayerName(name);
+    localStorage.setItem("f1-player-name", name.toLowerCase().trim());
+    setPlayerName(name.toLowerCase().trim());
     setShowSetup(false);
   }
 
   async function setPick(round, posIdx, driverId) {
     if (!playerName) { setShowSetup(true); return; }
 
-    // Hitung picks baru dulu sebelum setState
-    const picks = [...(predictions[round] || [null, null, null, null, null])];
-    const existingIdx = picks.indexOf(driverId);
-    if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
-    picks[posIdx] = driverId || null;
+    setPreds(prev => {
+      const picks = [...(prev[round] || [null, null, null, null, null])];
+      // Cegah duplikat
+      const existingIdx = picks.indexOf(driverId);
+      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
+      picks[posIdx] = driverId || null;
+      return { ...prev, [round]: picks };
+    });
 
-    // Update state lokal
-    setPreds(prev => ({ ...prev, [round]: picks }));
-
-    // Auto-save ke Redis dengan picks yang sama (bukan state lama)
+    // Auto-save ke Redis
     setSaving(true);
     try {
+      const picks = [...(predictions[round] || [null, null, null, null, null])];
+      const existingIdx = picks.indexOf(driverId);
+      if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
+      picks[posIdx] = driverId || null;
+
       await fetch("/api/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
