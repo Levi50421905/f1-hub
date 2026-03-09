@@ -53,6 +53,64 @@ const CIRCUIT_INFO = {
   24: { laps: 58,  length: 5.281, turns: 16, lapRecord: "1:26.103", lapHolder: "Verstappen", lapYear: 2021, country: "UAE" },
 };
 
+
+// SVG path data untuk bentuk sirkuit (simplified, recognizable)
+const CIRCUIT_PATHS = {
+  1: "M 50,20 L 180,20 Q 200,20 200,40 L 200,80 Q 200,95 185,95 L 160,95 Q 145,95 140,110 L 130,140 Q 125,155 110,155 L 80,155 Q 60,155 55,140 L 40,100 Q 35,85 50,80 L 50,20 Z", // Albert Park
+  2: "M 30,40 L 160,30 Q 180,28 185,45 L 190,90 Q 192,105 175,108 L 140,112 L 135,140 Q 132,158 115,160 L 70,160 Q 50,160 45,142 L 35,95 Q 28,75 30,40 Z", // Shanghai
+  3: "M 60,15 L 170,15 Q 190,15 195,35 L 200,75 Q 202,95 185,100 L 160,102 Q 145,102 140,120 L 130,155 Q 125,170 105,170 L 65,170 Q 42,170 38,150 L 28,100 Q 22,78 35,60 L 50,30 Q 55,15 60,15 Z", // Suzuka
+  4: "M 40,30 L 175,25 Q 195,24 198,44 L 200,85 Q 200,102 183,105 L 150,108 L 148,135 Q 146,152 128,155 L 72,155 Q 52,155 48,136 L 38,90 Q 34,72 40,30 Z", // Bahrain
+  5: "M 50,15 L 185,15 Q 205,15 208,35 L 210,65 L 195,75 L 210,85 L 208,120 Q 205,138 185,140 L 55,140 Q 35,140 32,120 L 30,80 L 45,70 L 30,60 L 32,35 Q 35,15 50,15 Z", // Jeddah
+  6: "M 60,20 C 140,10 190,50 195,90 C 198,120 170,155 120,158 C 70,160 30,130 28,90 C 26,55 45,25 60,20 Z", // Miami (oval-ish)
+  7: "M 50,25 L 165,20 Q 185,19 188,38 L 192,75 Q 194,92 177,97 L 150,100 L 148,128 Q 146,145 128,148 L 70,148 Q 50,148 46,130 L 38,85 Q 32,65 38,45 L 42,28 Q 45,25 50,25 Z", // Montreal
+  8: "M 100,15 C 155,12 195,45 198,85 C 200,115 175,150 135,158 C 105,163 75,155 58,138 C 38,118 35,85 50,62 C 65,38 80,17 100,15 Z", // Monaco (tight)
+  9: "M 55,18 L 172,15 Q 192,14 195,33 L 198,72 Q 200,90 183,94 L 158,97 L 155,124 Q 153,142 135,145 L 68,145 Q 48,145 44,127 L 34,82 Q 28,62 34,42 L 40,22 Q 45,18 55,18 Z", // Barcelona
+  10: "M 80,20 C 160,15 205,60 200,105 C 195,140 160,165 115,165 C 70,165 35,140 30,105 C 25,65 45,23 80,20 Z", // Red Bull Ring (short)
+  11: "M 45,22 L 178,18 Q 198,17 200,36 L 202,78 Q 204,97 187,101 L 160,104 L 157,133 Q 155,152 137,155 L 65,155 Q 44,155 40,136 L 30,89 Q 24,68 30,47 L 35,25 Q 39,22 45,22 Z", // Silverstone
+  12: "M 35,25 L 185,15 Q 207,14 210,36 L 212,65 Q 213,83 196,88 L 168,93 L 165,128 Q 163,150 143,153 L 55,153 Q 34,153 30,132 L 22,80 Q 16,55 25,35 L 35,25 Z", // Spa (long)
+  13: "M 65,18 L 162,15 Q 182,14 186,33 L 190,72 Q 192,89 175,93 L 152,96 L 150,122 Q 148,140 131,143 L 72,143 Q 52,143 48,125 L 38,80 Q 32,60 40,40 L 50,22 Q 55,18 65,18 Z", // Hungaroring
+  14: "M 55,20 L 170,16 Q 190,15 194,34 L 197,73 Q 199,91 182,95 L 156,98 L 154,126 Q 152,144 134,147 L 68,147 Q 48,147 44,128 L 34,83 Q 28,62 34,42 L 40,23 Q 44,20 55,20 Z", // Zandvoort
+  15: "M 50,22 L 175,17 Q 196,16 199,36 L 201,76 Q 202,95 185,99 L 158,102 L 156,130 Q 154,149 136,152 L 66,152 Q 45,152 41,133 L 31,86 Q 25,65 31,44 L 37,25 Q 41,22 50,22 Z", // Monza
+  16: "M 55,18 L 168,15 Q 188,14 192,33 L 195,70 Q 197,88 180,92 L 154,95 L 151,122 Q 149,140 132,143 L 70,143 Q 50,143 46,125 L 36,79 Q 30,58 37,38 L 43,21 Q 48,18 55,18 Z", // Barcelona (new)
+  17: "M 50,18 C 130,8 205,55 208,100 C 210,135 185,168 140,170 C 100,172 62,152 45,120 C 28,88 30,52 50,18 Z", // Baku (street)
+  18: "M 55,20 C 140,8 210,55 213,100 C 215,138 185,172 135,175 C 90,177 50,155 35,118 C 20,82 25,45 55,20 Z", // Singapore
+  19: "M 60,20 C 145,10 208,58 210,103 C 212,140 182,170 132,172 C 85,174 45,150 32,113 C 18,76 22,40 60,20 Z", // COTA
+  20: "M 50,22 L 168,17 Q 188,16 192,35 L 195,74 Q 197,92 180,96 L 154,99 L 152,127 Q 150,145 132,148 L 70,148 Q 50,148 46,130 L 36,84 Q 30,63 36,43 L 42,25 Q 47,22 50,22 Z", // Mexico City
+  21: "M 55,20 L 170,15 Q 190,14 193,33 L 195,72 Q 197,90 180,94 L 154,97 L 152,124 Q 150,142 132,145 L 70,145 Q 50,145 46,127 L 36,81 Q 30,60 37,40 L 43,23 Q 48,20 55,20 Z", // Interlagos
+  22: "M 60,22 C 145,12 208,60 210,105 C 212,142 182,172 132,174 C 85,176 45,152 32,115 C 18,78 22,42 60,22 Z", // Las Vegas
+  23: "M 55,20 L 170,15 Q 190,14 194,33 L 197,70 Q 199,88 182,92 L 156,95 L 154,122 Q 152,140 134,143 L 68,143 Q 48,143 44,125 L 34,79 Q 28,58 34,38 L 40,23 Q 45,20 55,20 Z", // Lusail
+  24: "M 55,18 L 170,13 Q 190,12 194,31 L 197,70 Q 199,88 182,92 L 156,95 L 154,123 Q 152,141 134,144 L 68,144 Q 48,144 44,126 L 34,80 Q 28,59 34,39 L 40,21 Q 45,18 55,18 Z", // Yas Marina
+};
+
+function CircuitShape({ round, color = "#ef4444" }) {
+  const path = CIRCUIT_PATHS[round];
+  if (!path) return null;
+  return (
+    <svg
+      viewBox="0 0 240 190"
+      style={{ width: "100%", maxWidth: 280, height: "auto" }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Glow effect */}
+      <defs>
+        <filter id={`glow-${round}`}>
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Track shadow */}
+      <path d={path} fill="none" stroke={color + "30"} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Main track */}
+      <path d={path} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter={`url(#glow-${round})`}/>
+      {/* Start/finish line */}
+      <line x1="50" y1="14" x2="50" y2="26" stroke="#ffffff" strokeWidth="3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 export default function RaceDetailPage() {
   const { round } = useParams();
   const roundNum  = parseInt(round);
@@ -389,35 +447,50 @@ export default function RaceDetailPage() {
         )}
 
         {/* Circuit info */}
-        {tab === "circuit" && circuit && (
-          <div>
-            <div style={S.circuitGrid}>
-              <div style={S.circuitCard}>
-                <div style={S.circuitLabel}>JUMLAH LAP</div>
-                <div style={S.circuitValue}>{circuit.laps}</div>
+        {tab === "circuit" && circuit && (() => {
+          const raceColor = raceInfo?.circuit?.country
+            ? "#ef4444"
+            : "#ef4444";
+          return (
+            <div>
+              {/* Circuit shape */}
+              <div style={{
+                background: "#0d1117", border: "1px solid #1a1f2e",
+                borderRadius: 14, padding: "20px",
+                display: "flex", justifyContent: "center",
+                marginBottom: 12,
+              }}>
+                <CircuitShape round={roundNum} color="#ef4444" />
               </div>
-              <div style={S.circuitCard}>
-                <div style={S.circuitLabel}>PANJANG SIRKUIT</div>
-                <div style={S.circuitValue}>{circuit.length} km</div>
-              </div>
-              <div style={S.circuitCard}>
-                <div style={S.circuitLabel}>JUMLAH TIKUNGAN</div>
-                <div style={S.circuitValue}>{circuit.turns}</div>
-              </div>
-              <div style={S.circuitCard}>
-                <div style={S.circuitLabel}>JARAK TOTAL RACE</div>
-                <div style={S.circuitValue}>{(circuit.laps * circuit.length).toFixed(1)} km</div>
-              </div>
-              <div style={{ ...S.circuitCard, gridColumn: "span 2" }}>
-                <div style={S.circuitLabel}>REKOR LAP TERCEPAT</div>
-                <div style={{ ...S.circuitValue, color: "#ef4444" }}>{circuit.lapRecord}</div>
-                <div style={{ fontSize: 11, color: "#4b5563", marginTop: 4 }}>
-                  {circuit.lapHolder} · {circuit.lapYear}
+
+              <div style={S.circuitGrid}>
+                <div style={S.circuitCard}>
+                  <div style={S.circuitLabel}>JUMLAH LAP</div>
+                  <div style={S.circuitValue}>{circuit.laps}</div>
+                </div>
+                <div style={S.circuitCard}>
+                  <div style={S.circuitLabel}>PANJANG SIRKUIT</div>
+                  <div style={S.circuitValue}>{circuit.length} km</div>
+                </div>
+                <div style={S.circuitCard}>
+                  <div style={S.circuitLabel}>JUMLAH TIKUNGAN</div>
+                  <div style={S.circuitValue}>{circuit.turns}</div>
+                </div>
+                <div style={S.circuitCard}>
+                  <div style={S.circuitLabel}>JARAK TOTAL RACE</div>
+                  <div style={S.circuitValue}>{(circuit.laps * circuit.length).toFixed(1)} km</div>
+                </div>
+                <div style={{ ...S.circuitCard, gridColumn: "span 2" }}>
+                  <div style={S.circuitLabel}>REKOR LAP TERCEPAT</div>
+                  <div style={{ ...S.circuitValue, color: "#ef4444" }}>{circuit.lapRecord}</div>
+                  <div style={{ fontSize: 11, color: "#4b5563", marginTop: 4 }}>
+                    {circuit.lapHolder} · {circuit.lapYear}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
         {tab === "circuit" && !circuit && (
           <div style={S.noData}>Info sirkuit tidak tersedia.</div>
         )}

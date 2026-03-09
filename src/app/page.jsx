@@ -24,6 +24,8 @@ export default function HomePage() {
   const [standings, setStandings] = useState(null);
   const [schedule,  setSchedule]  = useState([]);
   const [loading,   setLoading]   = useState(true);
+  const [countdown, setCountdown] = useState(null);
+  const [weather,   setWeather]   = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -48,9 +50,51 @@ export default function HomePage() {
     nextRace.qualifying?.time || fb.qualifying?.time
   ) : null;
 
+  // Countdown timer live ke race berikutnya
+  useEffect(() => {
+    if (!nextRace) return;
+    const fb2 = SCHEDULE_2026[nextRace.round] || {};
+    const raceDate = fb2.race?.date || nextRace.date;
+    const raceTime = fb2.race?.time || nextRace.time || "00:00:00Z";
+    const t = (raceTime).replace(/Z?$/, "Z");
+    const target = new Date(`${raceDate}T${t}`);
+
+    function tick() {
+      const diff = target - new Date();
+      if (diff <= 0) { setCountdown({ d:0, h:0, m:0, s:0 }); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown({ d, h, m, s });
+    }
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [nextRace]);
+
+  // Weather dari Open-Meteo (gratis, no API key)
+  useEffect(() => {
+    if (!nextRace?.circuit?.lat || !nextRace?.circuit?.long) return;
+    const lat = nextRace.circuit.lat;
+    const lon = nextRace.circuit.long;
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m&timezone=auto`)
+      .then(r => r.json())
+      .then(data => {
+        const c = data.current;
+        if (!c) return;
+        const code = c.weathercode;
+        const icon = code === 0 ? "☀️" : code <= 3 ? "⛅" : code <= 49 ? "🌫️" : code <= 69 ? "🌧️" : code <= 79 ? "🌨️" : "⛈️";
+        setWeather({ temp: Math.round(c.temperature_2m), icon, wind: Math.round(c.windspeed_10m) });
+      })
+      .catch(() => {});
+  }, [nextRace]);
+
   function daysUntil(ds) {
     return Math.ceil((new Date(ds) - today) / (1000 * 60 * 60 * 24));
   }
+
+  function pad(n) { return String(n).padStart(2, "0"); }
 
   return (
     <div style={{ paddingBottom: 8 }}>
@@ -110,12 +154,56 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Countdown */}
+            {/* Countdown + Weather */}
             <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 48, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>
-                {daysUntil(nextRace.date)}
-              </div>
-              <div style={{ fontSize: 10, color: "#6b7280" }}>HARI</div>
+              {countdown ? (
+                <div>
+                  {countdown.d > 0 ? (
+                    <div>
+                      <div style={{ fontSize: 42, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{countdown.d}</div>
+                      <div style={{ fontSize: 9, color: "#6b7280", marginBottom: 4 }}>HARI LAGI</div>
+                    </div>
+                  ) : null}
+                  <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
+                    {[
+                      { v: pad(countdown.h), l: "JAM" },
+                      { v: ":", l: null },
+                      { v: pad(countdown.m), l: "MNT" },
+                      { v: ":", l: null },
+                      { v: pad(countdown.s), l: "DTK" },
+                    ].map((item, i) =>
+                      item.l === null ? (
+                        <span key={i} style={{ fontSize: 16, fontWeight: 900, color: "#ef444466", lineHeight: 1 }}>:</span>
+                      ) : (
+                        <div key={i} style={{ textAlign: "center" }}>
+                          <div style={{
+                            fontSize: countdown.d > 0 ? 14 : 20,
+                            fontWeight: 900, color: "#ef4444",
+                            background: "#ef444415", border: "1px solid #ef444430",
+                            borderRadius: 6, padding: countdown.d > 0 ? "3px 5px" : "4px 7px",
+                            fontFamily: "monospace", lineHeight: 1.2,
+                            minWidth: 28,
+                          }}>{item.v}</div>
+                          <div style={{ fontSize: 7, color: "#4b5563", marginTop: 2 }}>{item.l}</div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  {weather && (
+                    <div style={{ marginTop: 8, fontSize: 11, color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                      <span>{weather.icon}</span>
+                      <span>{weather.temp}°C</span>
+                      <span style={{ color: "#374151" }}>·</span>
+                      <span>{weather.wind} km/h</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 48, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{daysUntil(nextRace.date)}</div>
+                  <div style={{ fontSize: 10, color: "#6b7280" }}>HARI</div>
+                </div>
+              )}
             </div>
           </div>
         </div>

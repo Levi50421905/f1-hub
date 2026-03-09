@@ -8,25 +8,90 @@ export const TEAM_COLORS = {
   "ferrari":       "#E8002D",
   "williams":      "#64C4FF",
   "racing_bulls":  "#6692FF",
+  "rb":            "#6692FF",
   "aston_martin":  "#358C75",
   "haas":          "#B6BABD",
-  "audi":          "#F50537",   // Audi merah
-  "kick_sauber":   "#52E252",   // fallback lama
+  "audi":          "#F50537",
+  "kick_sauber":   "#52E252",
   "alpine":        "#FF87BC",
-  "cadillac":      "#BA0C2F",   // Cadillac merah gelap
+  "cadillac":      "#BA0C2F",
   "default":       "#6b7280",
 };
 
 export function getTeamColor(constructorId = "") {
   const id = constructorId.toLowerCase().replace(/[-\s]/g, "_");
   if (TEAM_COLORS[id]) return TEAM_COLORS[id];
-  // partial match
   for (const [key, color] of Object.entries(TEAM_COLORS)) {
     if (id.includes(key) || key.includes(id)) return color;
   }
   return TEAM_COLORS.default;
 }
 
+// ISO 2-letter country codes for flagcdn.com
+export const NATIONALITY_ISO = {
+  "Dutch":          "nl",
+  "British":        "gb",
+  "Monegasque":     "mc",
+  "Spanish":        "es",
+  "Mexican":        "mx",
+  "Finnish":        "fi",
+  "Australian":     "au",
+  "Canadian":       "ca",
+  "French":         "fr",
+  "German":         "de",
+  "Japanese":       "jp",
+  "Thai":           "th",
+  "Italian":        "it",
+  "American":       "us",
+  "Brazilian":      "br",
+  "New Zealander":  "nz",
+  "Chinese":        "cn",
+  "Argentine":      "ar",
+  "Austrian":       "at",
+  "Danish":         "dk",
+  "Polish":         "pl",
+};
+
+export const COUNTRY_ISO = {
+  "Australia":            "au",
+  "China":                "cn",
+  "Japan":                "jp",
+  "Bahrain":              "bh",
+  "Saudi Arabia":         "sa",
+  "USA":                  "us",
+  "United States":        "us",
+  "Canada":               "ca",
+  "Monaco":               "mc",
+  "Spain":                "es",
+  "Austria":              "at",
+  "UK":                   "gb",
+  "United Kingdom":       "gb",
+  "Belgium":              "be",
+  "Hungary":              "hu",
+  "Netherlands":          "nl",
+  "Italy":                "it",
+  "Azerbaijan":           "az",
+  "Singapore":            "sg",
+  "Mexico":               "mx",
+  "Brazil":               "br",
+  "United Arab Emirates": "ae",
+  "Qatar":                "qa",
+};
+
+// Gambar bendera dari flagcdn.com — ukuran w=40 cukup untuk inline
+export function getFlagImg(nationality = "", size = 24) {
+  const iso = NATIONALITY_ISO[nationality];
+  if (!iso) return null;
+  return `https://flagcdn.com/w40/${iso}.png`;
+}
+
+export function getCountryFlagImg(country = "", size = 24) {
+  const iso = COUNTRY_ISO[country];
+  if (!iso) return null;
+  return `https://flagcdn.com/w40/${iso}.png`;
+}
+
+// Fallback emoji (tetap dipakai di tempat yang belum diupdate)
 export const NATIONALITY_FLAGS = {
   "Dutch":          "🇳🇱",
   "British":        "🇬🇧",

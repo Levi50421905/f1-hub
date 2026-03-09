@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getTeamColor, getFlag } from "@/lib/teamColors";
+import { getTeamColor, getFlag, getFlagImg } from "@/lib/teamColors";
 
 function StatBox({ label, value, color, sub }) {
   return (
@@ -108,17 +108,38 @@ export default function DriverProfilePage({ params }) {
         }} />
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-          {/* Car number */}
+          {/* Headshot */}
           <div style={{
-            width: 80, height: 80, borderRadius: 16, flexShrink: 0,
-            background: color + "22", border: `2px solid ${color}55`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, fontWeight: 900, color: color,
-          }}>{driver.num || "#"}</div>
+            width: 90, height: 90, borderRadius: 16, flexShrink: 0,
+            background: color + "18", border: `2px solid ${color}44`,
+            overflow: "hidden", position: "relative",
+          }}>
+            {driver.headshotUrl ? (
+              <img
+                src={driver.headshotUrl}
+                alt={driver.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                onError={e => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <div style={{
+              display: driver.headshotUrl ? "none" : "flex",
+              width: "100%", height: "100%",
+              alignItems: "center", justifyContent: "center",
+              fontSize: 28, fontWeight: 900, color,
+            }}>{driver.num || "#"}</div>
+          </div>
 
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: color, letterSpacing: 3, marginBottom: 6, fontFamily: "monospace" }}>
-              P{driver.season.pos || "—"} · {flag} {driver.nationality}
+            <div style={{ fontSize: 10, color: color, letterSpacing: 3, marginBottom: 6, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 6 }}>
+              P{driver.season.pos || "—"} ·
+              {getFlagImg(driver.nationality) ? (
+                <img src={getFlagImg(driver.nationality)} alt={driver.nationality} style={{ width: 20, height: 14, borderRadius: 2, objectFit: "cover" }} />
+              ) : flag}
+              {driver.nationality}
             </div>
             <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, marginBottom: 4 }}>
               {driver.name}
