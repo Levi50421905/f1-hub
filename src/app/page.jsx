@@ -26,14 +26,17 @@ export default function HomePage() {
   const [loading,   setLoading]   = useState(true);
   const [countdown, setCountdown] = useState(null);
   const [weather,   setWeather]   = useState(null);
+  const [news,      setNews]      = useState([]);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/standings?type=drivers").then(r => r.json()),
       fetch("/api/schedule").then(r => r.json()),
-    ]).then(([d, s]) => {
+      fetch("/api/news").then(r => r.json()).catch(() => ({ success: false, data: [] })),
+    ]).then(([d, s, n]) => {
       if (d.success) setStandings(d.data);
       if (s.success) setSchedule(s.data);
+      if (n.success) setNews(n.data.slice(0, 3));
     }).finally(() => setLoading(false));
   }, []);
 
@@ -95,6 +98,21 @@ export default function HomePage() {
   }
 
   function pad(n) { return String(n).padStart(2, "0"); }
+
+  function timeAgo(pub) {
+    if (!pub) return "";
+    const diff = Date.now() - new Date(pub);
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m}m lalu`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}j lalu`;
+    return `${Math.floor(h / 24)}h lalu`;
+  }
+
+  const SOURCE_COLORS = {
+    "Autosport": "#ef4444", "Motorsport.com": "#f97316",
+    "BBC Sport": "#3b82f6", "NewsAPI": "#8b5cf6",
+  };
 
   return (
     <div style={{ paddingBottom: 8 }}>
@@ -313,6 +331,48 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      {/* News preview */}
+      {news.length > 0 && (
+        <div style={{ marginTop: 16, animation: "fadeUp 0.4s ease 0.3s both" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>📰 BERITA TERBARU</span>
+            <Link href="/news" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            {news.map((item, i) => (
+              <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <div style={{
+                  background: "#0d1117", border: "1px solid #1a1f2e",
+                  borderRadius: 10, padding: "10px 12px",
+                  display: "flex", gap: 10, alignItems: "flex-start",
+                  transition: "background 0.15s",
+                }}>
+                  {item.img && (
+                    <div style={{ width: 56, height: 44, flexShrink: 0, borderRadius: 6, overflow: "hidden", background: "#111" }}>
+                      <img src={item.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={e => { e.target.parentElement.style.display = "none"; }} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: SOURCE_COLORS[item.source] || "#ef4444" }}>
+                        {item.source?.toUpperCase()}
+                      </span>
+                      <span style={{ fontSize: 9, color: "#374151" }}>· {timeAgo(item.pub)}</span>
+                    </div>
+                    <div style={{
+                      fontSize: 12, fontWeight: 600, lineHeight: 1.4,
+                      overflow: "hidden", display: "-webkit-box",
+                      WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                    }}>{item.title}</div>
+                  </div>
+                  <span style={{ fontSize: 12, color: "#374151", flexShrink: 0 }}>↗</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

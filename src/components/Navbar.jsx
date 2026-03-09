@@ -9,10 +9,11 @@ const LINKS = [
   { href: "/",            label: "Home",      icon: "🏠" },
   { href: "/standings",   label: "Klasemen",  icon: "🏆" },
   { href: "/schedule",    label: "Kalender",  icon: "📅" },
-  { href: "/drivers",     label: "Driver",    icon: "🧑‍✈️" },
+  { href: "/drivers",     label: "Driver",    icon: "🧑" },
   { href: "/chart",       label: "Grafik",    icon: "📈" },
   { href: "/predict",     label: "Prediksi",  icon: "🎯" },
   { href: "/leaderboard", label: "Skor",      icon: "🏅" },
+  { href: "/news",        label: "Berita",    icon: "📰" },
 ];
 
 export default function Navbar() {
