@@ -164,19 +164,26 @@ export default function DriversPage() {
                     }}>{num}</div>
 
                     {/* Headshot */}
-                    {headshot ? (
-                      <img
-                        src={headshot}
-                        alt={d.driver.lastName}
-                        style={{
-                          height: "110%", width: "auto",
-                          objectFit: "cover", objectPosition: "top",
-                          position: "absolute", right: -4, bottom: 0,
-                          filter: "drop-shadow(0 0 8px rgba(0,0,0,0.5))",
-                        }}
-                        onError={e => { e.target.style.display = "none"; }}
-                      />
-                    ) : (
+{headshot ? (
+  <img
+    src={headshot}
+    alt={d.driver.lastName}
+    style={{
+      position: "absolute",
+      right: 0,
+      bottom: 0,
+      height: "115%",
+      width: "auto",
+      objectFit: "cover",
+      objectPosition: "50% 15%",
+      filter: "drop-shadow(0 0 10px rgba(0,0,0,0.6))",
+      pointerEvents: "none",
+    }}
+    onError={(e) => {
+      e.target.style.display = "none";
+    }}
+  />
+) : (
                       <div style={{
                         position: "absolute", right: 12, bottom: 8,
                         width: 56, height: 56, borderRadius: "50%",
