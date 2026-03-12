@@ -10,22 +10,45 @@ export default function PWAProvider() {
 
   useEffect(() => {
 
-    // DETECT jika sudah terinstall
+    // cek jika sudah install (mode standalone)
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setInstalled(true);
       return;
     }
 
-    // REGISTER SERVICE WORKER
+    // register service worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js")
         .then((reg) => {
+
           console.log("SW registered:", reg.scope);
+
+          // cek jika ada update service worker
+          reg.addEventListener("updatefound", () => {
+
+            const newWorker = reg.installing;
+
+            newWorker.addEventListener("statechange", () => {
+
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+
+                // aktifkan service worker baru
+                newWorker.postMessage("SKIP_WAITING");
+
+                // reload halaman agar pakai versi baru
+                window.location.reload();
+
+              }
+
+            });
+
+          });
+
         })
         .catch(console.error);
     }
 
-    // EVENT INSTALL PROMPT
+    // event install prompt
     const handler = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
@@ -34,7 +57,7 @@ export default function PWAProvider() {
 
     window.addEventListener("beforeinstallprompt", handler);
 
-    // EVENT SETELAH TERINSTALL
+    // event setelah install
     window.addEventListener("appinstalled", () => {
       setInstalled(true);
       setShowBanner(false);
@@ -109,10 +132,7 @@ export default function PWAProvider() {
           Install F1 Hub
         </div>
 
-        <div style={{
-          fontSize: 11,
-          color: "#6b7280"
-        }}>
+        <div style={{ fontSize: 11, color: "#6b7280" }}>
           Buka langsung dari home screen kamu
         </div>
       </div>
