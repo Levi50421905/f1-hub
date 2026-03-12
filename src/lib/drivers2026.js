@@ -40,7 +40,7 @@ export const DRIVERS_2026 = [
   // ── RED BULL RACING ───────────────────────────────────────
   {
     id: "max_verstappen",     // ✅ HARUS max_verstappen bukan verstappen (itu bapaknya Jos)
-    code: "VER", num: "1/3",
+    code: "VER", num: "1",
     firstName: "Max",         lastName: "Verstappen",
     nationality: "Dutch",
     team: "red_bull",         teamName: "Red Bull Racing",
