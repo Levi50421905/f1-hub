@@ -111,14 +111,13 @@ export default function DriverProfilePage({ params }) {
           {/* Headshot */}
 <div
   style={{
-    width: 110,
-    height: 110,
-    borderRadius: 16,
-    flexShrink: 0,
-    background: "#0b0f18",
-    border: `2px solid ${color}44`,
-    overflow: "hidden",
     position: "relative",
+    background: `linear-gradient(135deg, #0a0b0f, ${color}18)`,
+    height: 100,
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
   }}
 >
   {driver.headshotUrl ? (

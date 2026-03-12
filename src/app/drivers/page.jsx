@@ -169,15 +169,11 @@ export default function DriversPage() {
     src={headshot}
     alt={d.driver.lastName}
     style={{
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      height: "115%",
+      maxHeight: "100%",
       width: "auto",
-      objectFit: "cover",
-      objectPosition: "50% 15%",
-      filter: "drop-shadow(0 0 10px rgba(0,0,0,0.6))",
-      pointerEvents: "none",
+      objectFit: "contain",
+      objectPosition: "center bottom",
+      filter: "drop-shadow(0 0 8px rgba(0,0,0,0.6))",
     }}
     onError={(e) => {
       e.target.style.display = "none";
