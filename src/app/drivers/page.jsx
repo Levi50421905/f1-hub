@@ -27,18 +27,20 @@ export default function DriversPage() {
       setHeadshots(headshotCache);
       return;
     }
-    fetch("https://api.openf1.org/v1/drivers?session_key=latest")
+    fetch("https://api.openf1.org/v1/drivers")
       .then(r => r.json())
       .then(data => {
-        const map = {};
-        for (const d of data) {
-          if (d.headshot_url) map[d.driver_number] = d.headshot_url;
-          // Juga map by name_acronym untuk fallback
-          if (d.name_acronym && d.headshot_url) map[d.name_acronym] = d.headshot_url;
-        }
-        headshotCache = map;
-        setHeadshots(map);
-      })
+  const map = {};
+
+  data.forEach(d => {
+    if (d.driver_number && d.headshot_url) {
+      map[d.driver_number] = d.headshot_url;
+    }
+  });
+
+  headshotCache = map;
+  setHeadshots(map);
+})
       .catch(() => {}); // Gagal headshot tidak apa-apa
   }, []);
 
@@ -66,11 +68,13 @@ export default function DriversPage() {
   });
 
   function getHeadshot(driver) {
-    // Coba by num dulu, lalu by code
-    const static_ = DRIVERS_2026.find(s => s.id === driver.id);
-    const num = static_?.num || driver.num;
-    return headshots[parseInt(num)] || headshots[driver.code] || null;
-  }
+  const staticDriver = DRIVERS_2026.find(d => d.id === driver.id);
+  const num = staticDriver?.num;
+
+  if (!num) return null;
+
+  return headshots[num] || null;
+}
 
   return (
     <div>
