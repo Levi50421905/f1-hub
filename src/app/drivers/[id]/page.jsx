@@ -109,29 +109,51 @@ export default function DriverProfilePage({ params }) {
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
           {/* Headshot */}
-          <div style={{
-            width: 90, height: 90, borderRadius: 16, flexShrink: 0,
-            background: color + "18", border: `2px solid ${color}44`,
-            overflow: "hidden", position: "relative",
-          }}>
-            {driver.headshotUrl ? (
-              <img
-                src={driver.headshotUrl}
-                alt={driver.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
-                onError={e => {
-                  e.target.style.display = "none";
-                  e.target.nextSibling.style.display = "flex";
-                }}
-              />
-            ) : null}
-            <div style={{
-              display: driver.headshotUrl ? "none" : "flex",
-              width: "100%", height: "100%",
-              alignItems: "center", justifyContent: "center",
-              fontSize: 28, fontWeight: 900, color,
-            }}>{driver.num || "#"}</div>
-          </div>
+<div
+  style={{
+    width: 110,
+    height: 110,
+    borderRadius: 16,
+    flexShrink: 0,
+    background: "#0b0f18",
+    border: `2px solid ${color}44`,
+    overflow: "hidden",
+    position: "relative",
+  }}
+>
+  {driver.headshotUrl ? (
+    <img
+      src={driver.headshotUrl}
+      alt={driver.name}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        objectPosition: "50% 20%",
+      }}
+      onError={(e) => {
+        e.target.style.display = "none";
+        e.target.nextSibling.style.display = "flex";
+      }}
+    />
+  ) : null}
+
+  {/* fallback jika gambar gagal */}
+  <div
+    style={{
+      display: driver.headshotUrl ? "none" : "flex",
+      width: "100%",
+      height: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 32,
+      fontWeight: 900,
+      color,
+    }}
+  >
+    {driver.num || "#"}
+  </div>
+</div>
 
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, color: color, letterSpacing: 3, marginBottom: 6, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 6 }}>
