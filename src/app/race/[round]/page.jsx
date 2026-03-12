@@ -358,10 +358,10 @@ export default function RaceDetailPage() {
                     <tr key={i} style={S.tr(i)}>
                       <td style={{ ...S.td, fontWeight: 900, color: i < 3 ? "#fbbf24" : "#9ca3af", width: 40 }}>{r.position}</td>
                      <td style={{ ...S.td, fontWeight: 600, color }}>
-  {r.driver?.name || r.driver?.code || "—"}
+  {r.driver?.name || `${r.driver?.givenName || ""} ${r.driver?.familyName || ""}` || r.driver?.code || "—"}
 </td>
-                      <td style={{ ...S.td, fontSize: 11, color: "#4b5563" }}>
-  {r.team?.name || r.driver?.team || "—"}
+<td style={{ ...S.td, fontSize: 11, color: "#4b5563" }}>
+  {r.team?.name || r.constructor?.name || r.driver?.team || "—"}
 </td>
                       <td style={{ ...S.td, fontSize: 11, color: "#6b7280", fontFamily: "monospace" }}>
                         {r.time || r.status || "—"}
