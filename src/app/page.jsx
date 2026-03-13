@@ -553,3 +553,22 @@ export default function HomePage() {
     </div>
   );
 }
+<button
+  onClick={() => {
+    const isPWA =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      window.matchMedia("(display-mode: minimal-ui)").matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes("android-app://");
+    const done = localStorage.getItem("f1-notif-onboarded");
+    alert(`isPWA: ${isPWA}\nonboarded: ${done}\nstandalone: ${window.matchMedia("(display-mode: standalone)").matches}\nreferrer: ${document.referrer}`);
+  }}
+  style={{
+    position: "fixed", bottom: 80, right: 16, zIndex: 9999,
+    background: "#ef4444", color: "#fff", border: "none",
+    borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
+  }}
+>
+  DEBUG
+</button>
