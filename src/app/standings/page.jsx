@@ -2,7 +2,18 @@
 // app/standings/page.jsx
 
 import { useState, useEffect } from "react";
-import { getTeamColor, getFlag } from "@/lib/teamColors";
+import { getTeamColor, getFlagImg, getCountryFlagImg } from "@/lib/teamColors";
+
+function FlagImg({ url, alt }) {
+  if (!url) return <span style={{ fontSize: 20 }}>🏁</span>;
+  return (
+    <img
+      src={url}
+      alt={alt || "flag"}
+      style={{ width: 24, height: "auto", flexShrink: 0, borderRadius: 2, display: "block" }}
+    />
+  );
+}
 
 function LoadingBar() {
   return (
@@ -50,8 +61,8 @@ export default function StandingsPage() {
     fetchAll();
   }, []);
 
-  const maxDriverPts  = drivers?.drivers?.[0]?.points || 1;
-  const maxConPts     = constructors?.constructors?.[0]?.points || 1;
+  const maxDriverPts = drivers?.drivers?.[0]?.points || 1;
+  const maxConPts    = constructors?.constructors?.[0]?.points || 1;
 
   return (
     <div>
@@ -99,7 +110,10 @@ export default function StandingsPage() {
       </div>
 
       {error && (
-        <div style={{ background: "#ef444420", border: "1px solid #ef444440", borderRadius: 10, padding: 16, marginBottom: 16, color: "#ef4444", fontSize: 13 }}>
+        <div style={{
+          background: "#ef444420", border: "1px solid #ef444440",
+          borderRadius: 10, padding: 16, marginBottom: 16, color: "#ef4444", fontSize: 13,
+        }}>
           ⚠️ {error}
         </div>
       )}
@@ -110,8 +124,8 @@ export default function StandingsPage() {
       {!loading && tab === "drivers" && drivers && (
         <div style={{ display: "grid", gap: 8 }}>
           {drivers.drivers.map((d, i) => {
-            const color = getTeamColor(d.team.id);
-            const flag  = getFlag(d.driver.nationality);
+            const color   = getTeamColor(d.team.id);
+            const flagUrl = getFlagImg(d.driver.nationality);
             return (
               <div key={d.driver.id} className="row" style={{
                 background: i === 0 ? "#0d0a0a" : "#0d1117",
@@ -130,7 +144,7 @@ export default function StandingsPage() {
                 }}>P{d.pos}</div>
 
                 {/* Flag */}
-                <span style={{ fontSize: 20, flexShrink: 0 }}>{flag}</span>
+                <FlagImg url={flagUrl} alt={d.driver.nationality} />
 
                 {/* Name & Team */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -185,8 +199,8 @@ export default function StandingsPage() {
       {!loading && tab === "constructors" && constructors && (
         <div style={{ display: "grid", gap: 8 }}>
           {constructors.constructors.map((c, i) => {
-            const color = getTeamColor(c.team.id);
-            const flag  = getFlag(c.team.nationality);
+            const color   = getTeamColor(c.team.id);
+            const flagUrl = getCountryFlagImg(c.team.nationality);
             return (
               <div key={c.team.id} className="row" style={{
                 background: i === 0 ? "#0a0a0a" : "#0d1117",
@@ -195,6 +209,7 @@ export default function StandingsPage() {
                 display: "flex", alignItems: "center", gap: 14,
                 animation: `fadeUp 0.3s ease ${i * 30}ms both`,
               }}>
+                {/* Position */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 8, flexShrink: 0,
                   background: i === 0 ? color + "22" : "#1f2937",
@@ -202,8 +217,10 @@ export default function StandingsPage() {
                   fontSize: 14, fontWeight: 900, color: i === 0 ? color : "#4b5563",
                 }}>P{c.pos}</div>
 
-                <span style={{ fontSize: 20 }}>{flag}</span>
+                {/* Flag */}
+                <FlagImg url={flagUrl} alt={c.team.nationality} />
 
+                {/* Name & Progress */}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{c.team.name}</div>
                   <div style={{ height: 4, background: "#1a1f2e", borderRadius: 4, overflow: "hidden" }}>
@@ -214,11 +231,13 @@ export default function StandingsPage() {
                   </div>
                 </div>
 
+                {/* Wins */}
                 <div style={{ textAlign: "center", flexShrink: 0 }}>
                   <div style={{ fontSize: 11, color: "#4b5563" }}>Wins</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: c.wins > 0 ? "#fbbf24" : "#4b5563" }}>{c.wins}</div>
                 </div>
 
+                {/* Points */}
                 <div style={{ textAlign: "right", flexShrink: 0, minWidth: 52 }}>
                   <div style={{ fontSize: 24, fontWeight: 900, color: i === 0 ? color : "#e2e8f0", lineHeight: 1 }}>
                     {c.points}
