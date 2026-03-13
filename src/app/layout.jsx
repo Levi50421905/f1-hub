@@ -37,8 +37,29 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body style={{ margin: 0, background: "#0c0e16", color: "#f0f2f8" }}>
+
+        {/* Layer 0 — animated canvas background */}
         <AnimatedBg />
-        <div style={{ position: "relative", zIndex: 1 }}>
+
+        {/*
+          Layer 1 — vignette overlay.
+          Duduk di antara canvas dan konten supaya teks selalu terbaca,
+          tapi animasi masih kelihatan (tidak 100% opaque).
+        */}
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          background: `
+            radial-gradient(ellipse 110% 60% at 50% 0%,   rgba(12,14,22,0.15) 0%, rgba(12,14,22,0.6) 100%),
+            radial-gradient(ellipse 80%  80% at 0%   100%, rgba(12,14,22,0.35) 0%, transparent 65%),
+            radial-gradient(ellipse 80%  80% at 100% 0%,   rgba(12,14,22,0.25) 0%, transparent 65%)
+          `,
+        }} />
+
+        {/* Layer 2 — semua konten halaman */}
+        <div style={{ position: "relative", zIndex: 2 }}>
           <Navbar />
           <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 80px" }}>
             {children}
@@ -46,6 +67,7 @@ export default function RootLayout({ children }) {
           <PWAProvider />
           <OnboardingNotif />
         </div>
+
       </body>
     </html>
   );

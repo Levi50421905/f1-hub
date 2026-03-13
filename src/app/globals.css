@@ -17,8 +17,8 @@
   --text-primary:   #f0f2f8;
   --text-secondary: #8892b0;
   --text-muted:     #4a5278;
-  --red:    #e8344a;
-  --red-bg: #e8344a14;
+  --red:        #e8344a;
+  --red-bg:     #e8344a14;
   --red-border: #e8344a30;
   --gold:   #f5a623;
   --blue:   #4d9ef5;
@@ -40,20 +40,7 @@ body {
   min-height: 100vh;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.4;
-}
-
-::selection {
-  background: #e8344a30;
-  color: #fca5a5;
-}
+::selection { background: #e8344a30; color: #fca5a5; }
 
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
