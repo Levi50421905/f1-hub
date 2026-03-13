@@ -550,10 +550,7 @@ export default function HomePage() {
           </Card>
         </div>
       )}
-    </div>
-  );
-}
-<button
+      <button
   onClick={() => {
     const sa = window.matchMedia("(display-mode: standalone)").matches;
     const fu = window.matchMedia("(display-mode: fullscreen)").matches;
@@ -572,3 +569,6 @@ export default function HomePage() {
 >
   DEBUG
 </button>
+    </div>
+  );
+}
