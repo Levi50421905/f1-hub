@@ -163,7 +163,7 @@ export default function StandingsPage() {
                   fontSize: 13, fontWeight: 900,
                   color: isLead ? color : i < 3 ? "#9ca3af" : "#6b7280",
                   fontFamily: "'Barlow Condensed', sans-serif",
-                }}>{d.pos}</div>
+                }}>{d.pos ?? i + 1}</div>
 
                 <FlagImg url={flagUrl} alt={d.driver.nationality} size={24} />
 
@@ -243,7 +243,7 @@ export default function StandingsPage() {
                   fontSize: 13, fontWeight: 900,
                   color: isLead ? color : i < 3 ? "#9ca3af" : "#6b7280",
                   fontFamily: "'Barlow Condensed', sans-serif",
-                }}>{c.pos}</div>
+                }}>{c.pos ?? i + 1}</div>
 
                 <FlagImg url={flagUrl} alt={c.team.nationality} size={24} />
 
