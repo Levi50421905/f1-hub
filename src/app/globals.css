@@ -8,31 +8,21 @@
 }
 
 :root {
-  /* Background layers */
   --bg-base:    #0c0e16;
   --bg-surface: #131620;
   --bg-raised:  #1a1e2e;
   --bg-hover:   #1f2438;
-
-  /* Borders */
   --border:       #1e2338;
   --border-light: #252a3d;
-
-  /* Text */
   --text-primary:   #f0f2f8;
   --text-secondary: #8892b0;
   --text-muted:     #4a5278;
-
-  /* Accent */
   --red:    #e8344a;
   --red-bg: #e8344a14;
   --red-border: #e8344a30;
-
   --gold:   #f5a623;
   --blue:   #4d9ef5;
   --green:  #34c77b;
-
-  /* Radius */
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
@@ -50,7 +40,6 @@ body {
   min-height: 100vh;
 }
 
-/* Subtle noise texture on body */
 body::before {
   content: '';
   position: fixed;
@@ -72,3 +61,73 @@ body::before {
 
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; }
+
+/* ── NAVBAR ── */
+.desktop-nav  { display: flex; }
+.mobile-bar   { display: none; }
+.mobile-nav   { display: none; }
+.mobile-space { display: none; }
+
+@media (max-width: 640px) {
+  .desktop-nav  { display: none !important; }
+  .mobile-bar   { display: flex !important; }
+  .mobile-nav   { display: flex !important; }
+  .mobile-space { display: block !important; }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+}
+.nav-link:hover  { color: var(--text-secondary); background: var(--bg-raised); }
+.nav-link.active { color: var(--text-primary); background: var(--bg-raised); font-weight: 600; }
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--red);
+  border-radius: 2px 2px 0 0;
+}
+
+.mob-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  padding: 10px 4px 6px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+  position: relative;
+}
+.mob-tab.active { color: var(--red); }
+.mob-tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: var(--red);
+  border-radius: 0 0 3px 3px;
+}
+.mob-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  font-family: 'Outfit', sans-serif;
+}
