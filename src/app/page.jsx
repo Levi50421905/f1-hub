@@ -552,14 +552,10 @@ export default function HomePage() {
       )}
       <button
   onClick={() => {
-    const sa = window.matchMedia("(display-mode: standalone)").matches;
-    const fu = window.matchMedia("(display-mode: fullscreen)").matches;
-    const mi = window.matchMedia("(display-mode: minimal-ui)").matches;
-    const ns = window.navigator.standalone === true;
-    const isPWA = sa || fu || mi || ns;
-    const done = localStorage.getItem("f1-notif-onboarded");
-    const ref = document.referrer;
-    alert("isPWA: " + isPWA + "\nonboarded: " + done + "\nstandalone: " + sa + "\nreferrer: " + ref);
+    localStorage.removeItem("f1-notif-onboarded");
+    localStorage.removeItem("f1-reminders");
+    localStorage.removeItem("f1-notif-prefs");
+    alert("Reset! Tutup dan buka ulang app.");
   }}
   style={{
     position: "fixed", bottom: 80, right: 16, zIndex: 9999,
@@ -567,7 +563,7 @@ export default function HomePage() {
     borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
   }}
 >
-  DEBUG
+  RESET
 </button>
     </div>
   );
