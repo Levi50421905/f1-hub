@@ -60,8 +60,13 @@ export default function OnboardingNotif({ onDone }) {
   useEffect(() => {
     const isPWA =
       window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      window.matchMedia("(display-mode: minimal-ui)").matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes("android-app://");
+
     const done = localStorage.getItem("f1-notif-onboarded");
+    console.log("[F1 Hub] isPWA:", isPWA, "| onboarded:", done);
     if (isPWA && !done) setTimeout(() => setVisible(true), 500);
     if ("Notification" in window) setPermission(Notification.permission);
   }, []);
