@@ -38,19 +38,12 @@ export default function RootLayout({ children }) {
       </head>
       <body style={{ margin: 0, background: "#0c0e16", color: "#f0f2f8" }}>
 
-        {/* Layer 0 — animated canvas background */}
+        {/* Layer 0 — animated canvas */}
         <AnimatedBg />
 
-        {/*
-          Layer 1 — vignette overlay.
-          Duduk di antara canvas dan konten supaya teks selalu terbaca,
-          tapi animasi masih kelihatan (tidak 100% opaque).
-        */}
+        {/* Layer 1 — vignette overlay so text is always readable */}
         <div style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: "none",
+          position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none",
           background: `
             radial-gradient(ellipse 110% 60% at 50% 0%,   rgba(12,14,22,0.15) 0%, rgba(12,14,22,0.6) 100%),
             radial-gradient(ellipse 80%  80% at 0%   100%, rgba(12,14,22,0.35) 0%, transparent 65%),
@@ -58,10 +51,14 @@ export default function RootLayout({ children }) {
           `,
         }} />
 
-        {/* Layer 2 — semua konten halaman */}
+        {/* Layer 2 — content */}
         <div style={{ position: "relative", zIndex: 2 }}>
           <Navbar />
-          <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 80px" }}>
+          <main style={{
+            maxWidth: 900,
+            margin: "0 auto",
+            padding: "20px 20px 88px",
+          }}>
             {children}
           </main>
           <PWAProvider />
