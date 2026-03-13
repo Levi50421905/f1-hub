@@ -8,8 +8,9 @@
 const BASE = "https://api.jolpi.ca/ergast/f1";
 const SEASON = new Date().getFullYear(); // otomatis deteksi tahun
 
-async function fetchF1(path) {
-  const res = await fetch(`${BASE}${path}.json`, {
+async function fetchF1(path, limit = 100) {
+  const separator = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${BASE}${path}.json${separator}limit=${limit}`, {
     next: { revalidate: 3600 }, // cache 1 jam, auto revalidate
   });
   if (!res.ok) throw new Error(`F1 API error: ${res.status} — ${path}`);
