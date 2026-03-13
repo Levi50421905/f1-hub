@@ -91,12 +91,28 @@ export default function OnboardingNotif({ onDone }) {
     if (permission !== "granted") return;
     setTestLoading(true);
     await new Promise(r => setTimeout(r, 700));
-    new Notification("🏎️ F1 Hub — Test Notifikasi", {
-      body: "Notifikasi kamu sudah aktif dan berfungsi dengan baik!",
-      icon: "/icons/icon-192.png",
-      tag:  "f1-test",
-    });
-    setTestSent(true);
+    try {
+      // Pakai SW showNotification — wajib untuk HP Android
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification("🏎️ F1 Hub — Test Notifikasi", {
+          body:  "Notifikasi kamu sudah aktif dan berfungsi dengan baik!",
+          icon:  "/icons/icon-192.png",
+          badge: "/icons/badge-72.png",
+          tag:   "f1-test",
+        });
+      } else {
+        // Fallback desktop
+        new Notification("🏎️ F1 Hub — Test Notifikasi", {
+          body: "Notifikasi kamu sudah aktif dan berfungsi dengan baik!",
+          icon: "/icons/icon-192.png",
+          tag:  "f1-test",
+        });
+      }
+      setTestSent(true);
+    } catch (err) {
+      console.error("Test notif gagal:", err);
+    }
     setTestLoading(false);
   }
 
