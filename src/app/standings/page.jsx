@@ -161,7 +161,7 @@ export default function StandingsPage() {
                   border: `1px solid ${isLead ? color + "35" : "#1a1f2e"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 13, fontWeight: 900,
-                  color: isLead ? color : i < 3 ? "#6b7280" : "#2d3748",
+                  color: isLead ? color : i < 3 ? "#9ca3af" : "#6b7280",
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}>{d.pos}</div>
 
@@ -241,7 +241,7 @@ export default function StandingsPage() {
                   border: `1px solid ${isLead ? color + "35" : "#1a1f2e"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 13, fontWeight: 900,
-                  color: isLead ? color : i < 3 ? "#6b7280" : "#2d3748",
+                  color: isLead ? color : i < 3 ? "#9ca3af" : "#6b7280",
                   fontFamily: "'Barlow Condensed', sans-serif",
                 }}>{c.pos}</div>
 
