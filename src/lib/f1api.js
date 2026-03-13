@@ -6,12 +6,12 @@
 // ─────────────────────────────────────────────
 
 const BASE = "https://api.jolpi.ca/ergast/f1";
-const SEASON = new Date().getFullYear(); // otomatis deteksi tahun
+const SEASON = new Date().getFullYear();
 
 async function fetchF1(path, limit = 100) {
   const separator = path.includes("?") ? "&" : "?";
   const res = await fetch(`${BASE}${path}.json${separator}limit=${limit}`, {
-    next: { revalidate: 3600 }, // cache 1 jam, auto revalidate
+    next: { revalidate: 3600 },
   });
   if (!res.ok) throw new Error(`F1 API error: ${res.status} — ${path}`);
   const json = await res.json();
@@ -96,12 +96,11 @@ export async function getSchedule(season = SEASON) {
     },
     date: r.date,
     time: r.time,
-    // Session times (jika tersedia)
-    fp1: r.FirstPractice ? { date: r.FirstPractice.date, time: r.FirstPractice.time } : null,
-    fp2: r.SecondPractice ? { date: r.SecondPractice.date, time: r.SecondPractice.time } : null,
-    fp3: r.ThirdPractice ? { date: r.ThirdPractice.date, time: r.ThirdPractice.time } : null,
-    sprint: r.Sprint ? { date: r.Sprint.date, time: r.Sprint.time } : null,
-    qualifying: r.Qualifying ? { date: r.Qualifying.date, time: r.Qualifying.time } : null,
+    fp1: r.FirstPractice   ? { date: r.FirstPractice.date,   time: r.FirstPractice.time   } : null,
+    fp2: r.SecondPractice  ? { date: r.SecondPractice.date,  time: r.SecondPractice.time  } : null,
+    fp3: r.ThirdPractice   ? { date: r.ThirdPractice.date,   time: r.ThirdPractice.time   } : null,
+    sprint: r.Sprint       ? { date: r.Sprint.date,          time: r.Sprint.time          } : null,
+    qualifying: r.Qualifying ? { date: r.Qualifying.date,   time: r.Qualifying.time      } : null,
   }));
 }
 
@@ -125,7 +124,7 @@ export async function getRaceResult(season = SEASON, round) {
     },
     results: race.Results.map((r) => ({
       pos: parseInt(r.position),
-      posText: r.positionText, // bisa "R" untuk retired, "D" disqualified
+      posText: r.positionText,
       num: r.number,
       points: parseFloat(r.points),
       driver: {
@@ -149,6 +148,50 @@ export async function getRaceResult(season = SEASON, round) {
         time: r.FastestLap.Time?.time,
         speed: r.FastestLap.AverageSpeed?.speed,
       } : null,
+    })),
+  };
+}
+
+// ─── SPRINT RESULTS ───────────────────────────
+// Jolpica endpoint: /ergast/f1/{season}/{round}/sprint
+// Tersedia untuk round yang punya sprint weekend.
+// Catatan: Sprint QUALIFYING (shootout) belum di-expose
+// oleh Jolpica — hanya sprint race yang tersedia.
+
+export async function getSprintResult(season = SEASON, round) {
+  const data = await fetchF1(`/${season}/${round}/sprint`);
+  const race = data.RaceTable?.Races?.[0];
+  if (!race) return null;
+
+  return {
+    season: race.season,
+    round: parseInt(race.round),
+    name: race.raceName,
+    date: race.date,
+    circuit: {
+      name: race.Circuit.circuitName,
+      location: race.Circuit.Location.locality,
+      country: race.Circuit.Location.country,
+    },
+    results: (race.SprintResults || []).map((r) => ({
+      pos: parseInt(r.position),
+      posText: r.positionText,
+      num: r.number,
+      points: parseFloat(r.points),
+      driver: {
+        id: r.Driver.driverId,
+        code: r.Driver.code,
+        name: `${r.Driver.givenName} ${r.Driver.familyName}`,
+        nationality: r.Driver.nationality,
+      },
+      team: {
+        id: r.Constructor.constructorId,
+        name: r.Constructor.name,
+      },
+      grid: parseInt(r.grid),
+      laps: parseInt(r.laps),
+      status: r.status,
+      time: r.Time?.time || null,
     })),
   };
 }
@@ -193,7 +236,6 @@ export async function getQualifyingResult(season = SEASON, round) {
 // ─── PRACTICE RESULTS ─────────────────────────
 
 export async function getPracticeResult(season = SEASON, round, session = 1) {
-  // session: 1=FP1, 2=FP2, 3=FP3
   const sessionMap = { 1: "practice/1", 2: "practice/2", 3: "practice/3" };
   const data = await fetchF1(`/${season}/${round}/${sessionMap[session]}`);
   const race = data.RaceTable?.Races?.[0];
@@ -232,21 +274,17 @@ export async function getPracticeResult(season = SEASON, round, session = 1) {
 // ─── DRIVER PROFILE ───────────────────────────
 
 export async function getDriverProfile(driverId, season = SEASON) {
-  // Info dasar driver
   const driverData = await fetchF1(`/drivers/${driverId}`);
   const driver = driverData.DriverTable?.Drivers?.[0];
   if (!driver) return null;
 
-  // Hasil race musim ini
   const resultsData = await fetchF1(`/${season}/drivers/${driverId}/results`);
   const races = resultsData.RaceTable?.Races || [];
 
-  // Standings saat ini
   const standingsData = await fetchF1(`/${season}/drivers/${driverId}/driverStandings`);
   const standingsList = standingsData.StandingsTable?.StandingsLists?.[0];
   const standing = standingsList?.DriverStandings?.[0];
 
-  // Headshot dari OpenF1
   let headshotUrl = null;
   try {
     const openf1Drivers = await fetch(
@@ -328,8 +366,8 @@ export async function getPitStops(season = SEASON, round) {
       driverId: p.driverId,
       lap: parseInt(p.lap),
       stop: parseInt(p.stop),
-      time: p.time,       // waktu di lap berapa
-      duration: p.duration, // durasi pit stop
+      time: p.time,
+      duration: p.duration,
     })) || [],
   };
 }

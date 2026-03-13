@@ -211,6 +211,16 @@ function SprintTab({ isFinished, data }) {
 // ─── Tab: Sprint Qualifying ───────────────────────────────────────────────────
 
 function SprintQualiTab({ data }) {
+  if (data?.unavailable) return (
+    <NoData>
+      <div style={{ fontSize: 24, marginBottom: 8 }}>⚡</div>
+      <div style={{ fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>Sprint Qualifying</div>
+      <div>Data belum tersedia dari Jolpica API.</div>
+      <div style={{ marginTop: 4, fontSize: 11, color: "#374151" }}>
+        Jolpica sedang mengerjakan endpoint ini — akan aktif dalam beberapa bulan.
+      </div>
+    </NoData>
+  );
   if (!data?.results?.length) return <NoData>Hasil Sprint Qualifying belum tersedia.</NoData>;
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -309,7 +319,7 @@ export default function RaceDetailPage() {
       race:         { cond: tab === "race"         && !raceData        && finished, session: "race",            setter: setRaceData        },
       quali:        { cond: tab === "quali"        && !qualiData,                   session: "qualifying",      setter: setQualiData       },
       sprint:       { cond: tab === "sprint"       && !sprintData      && finished, session: "sprint",          setter: setSprintData      },
-      sprintQuali:  { cond: tab === "sprintQuali"  && !sprintQualiData,             session: "sprint_qualifying",setter: setSprintQualiData },
+      sprintQuali: { cond: tab === "sprintQuali" && !sprintQualiData, session: "sprint_qualifying", setter: (d) => setSprintQualiData(d ?? { unavailable: true }) },
     };
     const task = Object.values(tasks).find(t => t.cond);
     if (!task) return;

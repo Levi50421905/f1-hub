@@ -1,7 +1,8 @@
-// app/api/race/route.js
+// src/app/api/race/route.js
 import {
   getRaceResult,
   getQualifyingResult,
+  getSprintResult,
   getPracticeResult,
   getPitStops,
   getLapTimes,
@@ -13,12 +14,22 @@ export const revalidate = 0;
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const season = searchParams.get("season") || new Date().getFullYear();
-    const round  = searchParams.get("round");
-    const session = searchParams.get("session") || "race"; // race | qualifying | fp1 | fp2 | fp3 | pitstops | laps
+    const season  = searchParams.get("season") || new Date().getFullYear();
+    const round   = searchParams.get("round");
+    const session = searchParams.get("session") || "race";
 
     if (!round) {
       return Response.json({ success: false, error: "round parameter wajib" }, { status: 400 });
+    }
+
+    // Sprint Qualifying (Shootout) belum di-expose oleh Jolpica API.
+    // Return flag khusus supaya UI bisa tampilkan pesan yang jelas.
+    if (session === "sprint_qualifying") {
+      return Response.json({
+        success: false,
+        unavailable: true,
+        error: "Sprint Qualifying belum tersedia di Jolpica API.",
+      }, { status: 501 });
     }
 
     let data;
@@ -28,6 +39,9 @@ export async function GET(request) {
         break;
       case "qualifying":
         data = await getQualifyingResult(season, round);
+        break;
+      case "sprint":
+        data = await getSprintResult(season, round);
         break;
       case "fp1":
         data = await getPracticeResult(season, round, 1);
@@ -55,9 +69,6 @@ export async function GET(request) {
     return Response.json({ success: true, data });
   } catch (error) {
     console.error("Race API error:", error);
-    return Response.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
