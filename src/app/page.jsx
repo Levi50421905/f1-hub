@@ -1,19 +1,40 @@
 "use client";
-// src/app/page.jsx — Home
+// src/app/page.jsx — Home (Redesigned)
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getTeamColor, getFlagImg, getCountryFlagImg } from "@/lib/teamColors";
 import { SCHEDULE_2026 } from "@/lib/schedule2026";
 
-function FlagImg({ url, alt, size = 22 }) {
-  if (!url) return <span style={{ fontSize: size }}>🏁</span>;
+function FlagImg({ url, alt, size = 20 }) {
+  if (!url) return <span style={{ fontSize: size * 0.8 }}>🏁</span>;
   return (
-    <img
-      src={url}
-      alt={alt || "flag"}
-      style={{ width: size + 2, height: "auto", borderRadius: 2, display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}
-    />
+    <img src={url} alt={alt || "flag"} style={{
+      width: size, height: Math.round(size * 0.67),
+      borderRadius: 2, display: "block", flexShrink: 0,
+      objectFit: "cover", boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+    }} />
+  );
+}
+
+function SectionHeader({ label, href }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+      <span style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: 3, color: "#4b5563",
+        fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <div style={{ width: 12, height: 1, background: "#ef4444" }} />
+        {label}
+      </span>
+      {href && (
+        <Link href={href} style={{
+          fontSize: 9, color: "#ef4444", textDecoration: "none",
+          letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace", opacity: 0.8,
+        }}>semua →</Link>
+      )}
+    </div>
   );
 }
 
@@ -56,7 +77,6 @@ export default function HomePage() {
   const upcoming = schedule.filter(r => r.status === "upcoming").slice(0, 5);
   const top5     = standings?.drivers?.slice(0, 5) || [];
   const leader   = top5[0];
-
   const fb       = nextRace ? SCHEDULE_2026[nextRace.round] || {} : {};
   const raceWIB  = nextRace ? fmtWIB(nextRace.date || fb.race?.date, nextRace.time || fb.race?.time) : null;
   const qualiWIB = nextRace ? fmtWIB(
@@ -64,61 +84,49 @@ export default function HomePage() {
     nextRace.qualifying?.time || fb.qualifying?.time
   ) : null;
 
-  // Countdown timer
   useEffect(() => {
     if (!nextRace) return;
     const fb2 = SCHEDULE_2026[nextRace.round] || {};
     const raceDate = fb2.race?.date || nextRace.date;
-    const raceTime = fb2.race?.time || nextRace.time || "00:00:00Z";
-    const t = (raceTime).replace(/Z?$/, "Z");
-    const target = new Date(`${raceDate}T${t}`);
-
+    const raceTime = (fb2.race?.time || nextRace.time || "00:00:00Z").replace(/Z?$/, "Z");
+    const target = new Date(`${raceDate}T${raceTime}`);
     function tick() {
       const diff = target - new Date();
-      if (diff <= 0) { setCountdown({ d:0, h:0, m:0, s:0 }); return; }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setCountdown({ d, h, m, s });
+      if (diff <= 0) { setCountdown({ d: 0, h: 0, m: 0, s: 0 }); return; }
+      setCountdown({
+        d: Math.floor(diff / 86400000),
+        h: Math.floor((diff % 86400000) / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      });
     }
     tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
   }, [nextRace]);
 
-  // Weather
   useEffect(() => {
     if (!nextRace?.circuit?.lat || !nextRace?.circuit?.long) return;
-    const lat = nextRace.circuit.lat;
-    const lon = nextRace.circuit.long;
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m&timezone=auto`)
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${nextRace.circuit.lat}&longitude=${nextRace.circuit.long}&current=temperature_2m,weathercode,windspeed_10m&timezone=auto`)
       .then(r => r.json())
       .then(data => {
-        const c = data.current;
-        if (!c) return;
+        const c = data.current; if (!c) return;
         const code = c.weathercode;
         const icon = code === 0 ? "☀️" : code <= 3 ? "⛅" : code <= 49 ? "🌫️" : code <= 69 ? "🌧️" : code <= 79 ? "🌨️" : "⛈️";
         setWeather({ temp: Math.round(c.temperature_2m), icon, wind: Math.round(c.windspeed_10m) });
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }, [nextRace]);
 
-  function daysUntil(ds) {
-    return Math.ceil((new Date(ds) - today) / (1000 * 60 * 60 * 24));
-  }
-
-  function pad(n) { return String(n).padStart(2, "0"); }
-
-  function timeAgo(pub) {
+  const daysUntil = ds => Math.ceil((new Date(ds) - today) / 86400000);
+  const pad       = n  => String(n).padStart(2, "0");
+  const timeAgo   = pub => {
     if (!pub) return "";
     const diff = Date.now() - new Date(pub);
     const m = Math.floor(diff / 60000);
-    if (m < 60) return `${m}m lalu`;
+    if (m < 60) return `${m}m`;
     const h = Math.floor(m / 60);
-    if (h < 24) return `${h}j lalu`;
-    return `${Math.floor(h / 24)}h lalu`;
-  }
+    return h < 24 ? `${h}j` : `${Math.floor(h / 24)}h`;
+  };
 
   const SOURCE_COLORS = {
     "Autosport": "#ef4444", "Motorsport.com": "#f97316",
@@ -128,215 +136,245 @@ export default function HomePage() {
   return (
     <div style={{ paddingBottom: 8 }}>
       <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse  { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse  { 0%,100%{opacity:0.3} 50%{opacity:0.6} }
+        @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .home-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
         .stat-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 8px;
+          margin-bottom: 12px;
         }
         @media (max-width: 640px) {
+          .home-grid { grid-template-columns: 1fr; }
           .stat-grid { grid-template-columns: repeat(2, 1fr); }
-          .home-bottom { flex-direction: column !important; }
-          .home-bottom > div { width: 100% !important; }
+        }
+
+        .card {
+          background: #0b0d14;
+          border: 1px solid #1a1f2e;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .list-row {
+          display: flex; align-items: center; gap: 10px;
+          padding: 9px 14px;
+          border-bottom: 1px solid #0a0c12;
+          transition: background 0.15s;
+          text-decoration: none; color: inherit;
+        }
+        .list-row:last-child { border-bottom: none; }
+        .list-row:hover { background: #0d0f18; }
+
+        .news-row {
+          display: flex; gap: 10px; align-items: flex-start;
+          padding: 10px 14px;
+          border-bottom: 1px solid #0a0c12;
+          transition: background 0.15s;
+          text-decoration: none; color: inherit;
+        }
+        .news-row:last-child { border-bottom: none; }
+        .news-row:hover { background: #0d0f18; }
+
+        .skeleton {
+          background: #0b0d14; border: 1px solid #1a1f2e;
+          animation: pulse 1.5s ease-in-out infinite;
         }
       `}</style>
 
-      {/* Next Race Hero */}
+      {/* HERO */}
       {!loading && nextRace && (
         <div style={{
-          background: "linear-gradient(135deg,#0a0005,#0f0012)",
-          border: "1px solid #2d1030", borderRadius: 16,
-          padding: "20px", marginBottom: 16,
+          background: "linear-gradient(135deg, #0c0008 0%, #0f0515 50%, #08080f 100%)",
+          border: "1px solid #2a1535", borderRadius: 16,
+          padding: "20px 24px", marginBottom: 12,
           position: "relative", overflow: "hidden",
           animation: "fadeUp 0.4s ease",
         }}>
-          <div style={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, background: "radial-gradient(circle,#ef444418,transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, background: "radial-gradient(circle, #ef444410, transparent 65%)", pointerEvents: "none" }} />
 
-          <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 10, fontFamily: "monospace" }}>
-            ⬤ RACE BERIKUTNYA
+          <div style={{
+            fontSize: 9, color: "#ef4444", letterSpacing: 3,
+            fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 6,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "blink 2s ease infinite" }} />
+            RACE BERIKUTNYA
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ flex: 1, marginRight: 16 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4, lineHeight: 1.2, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <FlagImg url={getCountryFlagImg(nextRace.circuit.country)} alt={nextRace.circuit.country} size={20} />
-                {nextRace.name}
-              </h2>
-              <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <FlagImg url={getCountryFlagImg(nextRace.circuit.country)} alt={nextRace.circuit.country} size={26} />
+                <h2 style={{
+                  fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: -0.5, lineHeight: 1.1,
+                  fontFamily: "'Barlow Condensed', sans-serif", color: "#f1f5f9",
+                }}>{nextRace.name}</h2>
+              </div>
+              <div style={{ fontSize: 10, color: "#374151", marginBottom: 14, fontFamily: "'JetBrains Mono', monospace" }}>
                 {nextRace.circuit.name}
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
                 {qualiWIB && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, color: "#60a5fa", minWidth: 60 }}>🔵 Quali</span>
-                    <span style={{ fontSize: 12, fontFamily: "monospace", color: "#93c5fd", fontWeight: 600 }}>{qualiWIB}</span>
+                  <div>
+                    <div style={{ fontSize: 8, color: "#374151", letterSpacing: 2, marginBottom: 3, fontFamily: "'JetBrains Mono', monospace" }}>KUALIFIKASI</div>
+                    <div style={{ fontSize: 11, color: "#60a5fa", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{qualiWIB}</div>
                   </div>
                 )}
                 {raceWIB && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 11, color: "#fbbf24", minWidth: 60 }}>🏁 Race</span>
-                    <span style={{ fontSize: 12, fontFamily: "monospace", color: "#fde68a", fontWeight: 700 }}>{raceWIB}</span>
+                  <div>
+                    <div style={{ fontSize: 8, color: "#374151", letterSpacing: 2, marginBottom: 3, fontFamily: "'JetBrains Mono', monospace" }}>RACE</div>
+                    <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{raceWIB}</div>
+                  </div>
+                )}
+                {weather && (
+                  <div>
+                    <div style={{ fontSize: 8, color: "#374151", letterSpacing: 2, marginBottom: 3, fontFamily: "'JetBrains Mono', monospace" }}>CUACA</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "'JetBrains Mono', monospace" }}>
+                      {weather.icon} {weather.temp}°C · {weather.wind} km/h
+                    </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Countdown + Weather */}
-            <div style={{ textAlign: "center", flexShrink: 0 }}>
-              {countdown ? (
-                <div>
-                  {countdown.d > 0 && (
-                    <div>
-                      <div style={{ fontSize: 42, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{countdown.d}</div>
-                      <div style={{ fontSize: 9, color: "#6b7280", marginBottom: 4 }}>HARI LAGI</div>
-                    </div>
-                  )}
-                  <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
-                    {[
-                      { v: pad(countdown.h), l: "JAM" },
-                      { v: ":", l: null },
-                      { v: pad(countdown.m), l: "MNT" },
-                      { v: ":", l: null },
-                      { v: pad(countdown.s), l: "DTK" },
-                    ].map((item, i) =>
-                      item.l === null ? (
-                        <span key={i} style={{ fontSize: 16, fontWeight: 900, color: "#ef444466", lineHeight: 1 }}>:</span>
-                      ) : (
-                        <div key={i} style={{ textAlign: "center" }}>
-                          <div style={{
-                            fontSize: countdown.d > 0 ? 14 : 20,
-                            fontWeight: 900, color: "#ef4444",
-                            background: "#ef444415", border: "1px solid #ef444430",
-                            borderRadius: 6, padding: countdown.d > 0 ? "3px 5px" : "4px 7px",
-                            fontFamily: "monospace", lineHeight: 1.2,
-                            minWidth: 28,
-                          }}>{item.v}</div>
-                          <div style={{ fontSize: 7, color: "#4b5563", marginTop: 2 }}>{item.l}</div>
-                        </div>
-                      )
-                    )}
+            {countdown && (
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                {countdown.d > 0 && (
+                  <div style={{ marginBottom: 6 }}>
+                    <span style={{ fontSize: 44, fontWeight: 900, color: "#ef4444", lineHeight: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>{countdown.d}</span>
+                    <span style={{ fontSize: 9, color: "#4b5563", marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>HARI</span>
                   </div>
-                  {weather && (
-                    <div style={{ marginTop: 8, fontSize: 11, color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                      <span>{weather.icon}</span>
-                      <span>{weather.temp}°C</span>
-                      <span style={{ color: "#374151" }}>·</span>
-                      <span>{weather.wind} km/h</span>
-                    </div>
+                )}
+                <div style={{ display: "flex", gap: 3, alignItems: "flex-start", justifyContent: "flex-end" }}>
+                  {[{ v: pad(countdown.h), l: "JAM" }, { v: null }, { v: pad(countdown.m), l: "MNT" }, { v: null }, { v: pad(countdown.s), l: "DTK" }].map((item, i) =>
+                    item.v === null ? (
+                      <span key={i} style={{ color: "#2d3748", fontSize: 14, marginTop: 2, fontWeight: 700 }}>·</span>
+                    ) : (
+                      <div key={i} style={{ textAlign: "center" }}>
+                        <div style={{
+                          fontSize: countdown.d > 0 ? 14 : 20, fontWeight: 900, color: "#ef4444",
+                          fontFamily: "'JetBrains Mono', monospace",
+                          background: "#ef444412", border: "1px solid #ef444428",
+                          borderRadius: 6, padding: "3px 6px", lineHeight: 1.2,
+                          minWidth: 28, textAlign: "center",
+                        }}>{item.v}</div>
+                        <div style={{ fontSize: 7, color: "#374151", marginTop: 2, letterSpacing: 1 }}>{item.l}</div>
+                      </div>
+                    )
                   )}
                 </div>
-              ) : (
-                <div>
-                  <div style={{ fontSize: 48, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{daysUntil(nextRace.date)}</div>
-                  <div style={{ fontSize: 10, color: "#6b7280" }}>HARI</div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Stats */}
-      {!loading && (
-        <div className="stat-grid" style={{ marginBottom: 16, animation: "fadeUp 0.4s ease 0.1s both" }}>
-          {[
-            { icon: "🏁", val: schedule.filter(r=>r.status==="finished").length, sub1: `dari ${schedule.length}`, sub2: "Race Selesai" },
-            { icon: "🏆", val: leader ? leader.points : "—", sub1: leader ? leader.driver.code : "0 pts", sub2: "Points Leader" },
-            { icon: "📍", val: nextRace ? `R${nextRace.round}` : "—", sub1: nextRace?.circuit.country || "", sub2: "Race Weekend" },
-            { icon: "🔄", val: "Auto", sub1: "tiap 1 jam", sub2: "Update" },
-          ].map((s, i) => (
-            <div key={i} style={{
-              background: "#0d1117", border: "1px solid #1a1f2e",
-              borderRadius: 12, padding: "14px 12px", textAlign: "center",
-            }}>
-              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 2 }}>{s.val}</div>
-              <div style={{ fontSize: 10, color: "#6b7280" }}>{s.sub1}</div>
-              <div style={{ fontSize: 10, color: "#374151" }}>{s.sub2}</div>
+      {/* STATS */}
+      <div className="stat-grid" style={{ animation: "fadeUp 0.4s ease 0.08s both" }}>
+        {loading ? [...Array(4)].map((_, i) => (
+          <div key={i} className="skeleton" style={{ height: 72, borderRadius: 10 }} />
+        )) : [
+          { val: schedule.filter(r => r.status === "finished").length, sub: `dari ${schedule.length}`, label: "Race Selesai" },
+          { val: leader ? leader.points : "—", sub: leader?.driver.code || "belum ada", label: "Points Lead" },
+          { val: nextRace ? `R${nextRace.round}` : "—", sub: nextRace?.circuit.country || "TBA", label: "Berikutnya" },
+          { val: "Auto", sub: "tiap 1 jam", label: "Update" },
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: "#0b0d14", border: "1px solid #1a1f2e",
+            borderRadius: 10, padding: "12px 14px",
+          }}>
+            <div style={{ fontSize: 8, color: "#374151", letterSpacing: 2, marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase" }}>
+              {s.label}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom section */}
-      <div className="home-bottom" style={{ display: "flex", gap: 12, animation: "fadeUp 0.4s ease 0.2s both" }}>
-
-        {/* Top Driver */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>🏆 TOP DRIVER</span>
-            <Link href="/standings" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#f1f5f9", lineHeight: 1, marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: -0.5 }}>
+              {s.val}
+            </div>
+            <div style={{ fontSize: 9, color: "#4b5563" }}>{s.sub}</div>
           </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            {top5.length > 0 ? top5.map((d, i) => {
+        ))}
+      </div>
+
+      {/* MAIN GRID */}
+      <div className="home-grid" style={{ animation: "fadeUp 0.4s ease 0.14s both" }}>
+        {/* Top Drivers */}
+        <div>
+          <SectionHeader label="Top Driver" href="/standings" />
+          <div className="card">
+            {loading ? [...Array(5)].map((_, i) => (
+              <div key={i} style={{ height: 46, borderBottom: "1px solid #0a0c12", background: "#0b0d14" }} />
+            )) : top5.length > 0 ? top5.map((d, i) => {
               const color   = getTeamColor(d.team.id);
               const flagUrl = getFlagImg(d.driver.nationality);
               return (
-                <div key={d.driver.id} style={{
-                  background: "#0d1117", border: `1px solid ${i === 0 ? color + "33" : "#1a1f2e"}`,
-                  borderRadius: 10, padding: "10px 12px",
-                  display: "flex", alignItems: "center", gap: 10,
-                }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: i === 0 ? color : "#4b5563", minWidth: 20 }}>P{i+1}</span>
+                <div key={d.driver.id} className="list-row">
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                    background: i === 0 ? color + "20" : "#0f1219",
+                    border: `1px solid ${i === 0 ? color + "40" : "#1a1f2e"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, fontWeight: 800, color: i === 0 ? color : "#374151",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>{i + 1}</div>
                   <FlagImg url={flagUrl} alt={d.driver.nationality} size={20} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{d.driver.code || d.driver.lastName}</div>
-                    <div style={{ fontSize: 10, color }}>{d.team.name}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.3 }}>
+                      {d.driver.code || d.driver.lastName}
+                    </div>
+                    <div style={{ fontSize: 9, color, fontFamily: "'JetBrains Mono', monospace" }}>{d.team.name}</div>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? color : "#6b7280" }}>{d.points}</span>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? color : "#4b5563", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                    {d.points}
+                  </div>
                 </div>
               );
             }) : (
-              <div style={{
-                background: "#0d1117", border: "1px solid #1a1f2e",
-                borderRadius: 10, padding: "16px 12px", textAlign: "center",
-                fontSize: 12, color: "#4b5563",
-              }}>
-                Musim belum dimulai —<br />standings muncul setelah race pertama 🏁
+              <div style={{ padding: "20px 14px", textAlign: "center", fontSize: 11, color: "#374151", fontFamily: "'JetBrains Mono', monospace" }}>
+                Musim belum dimulai 🏁
               </div>
             )}
           </div>
         </div>
 
-        {/* Upcoming races */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>📅 RACE SELANJUTNYA</span>
-            <Link href="/schedule" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
-          </div>
-          <div style={{ display: "grid", gap: 6 }}>
-            {upcoming.map((race, i) => {
+        {/* Upcoming Races */}
+        <div>
+          <SectionHeader label="Race Selanjutnya" href="/schedule" />
+          <div className="card">
+            {loading ? [...Array(5)].map((_, i) => (
+              <div key={i} style={{ height: 46, borderBottom: "1px solid #0a0c12", background: "#0b0d14" }} />
+            )) : upcoming.map((race, i) => {
               const days    = daysUntil(race.date);
               const fb2     = SCHEDULE_2026[race.round] || {};
               const wib     = fmtWIB(race.date || fb2.race?.date, race.time || fb2.race?.time);
               const flagUrl = getCountryFlagImg(race.circuit.country);
+              const isNext  = i === 0;
               return (
-                <Link key={race.round} href={`/race/${race.round}`} style={{ textDecoration: "none" }}>
+                <Link key={race.round} href={`/race/${race.round}`} className="list-row">
                   <div style={{
-                    background: "#0d1117", border: `1px solid ${i === 0 ? "#ef444433" : "#1a1f2e"}`,
-                    borderRadius: 10, padding: "10px 12px",
-                    display: "flex", alignItems: "center", gap: 10,
-                    transition: "background 0.15s",
-                  }}>
-                    <div style={{
-                      width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                      background: i === 0 ? "#ef444422" : "#1a1f2e",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 10, fontWeight: 800,
-                      color: i === 0 ? "#ef4444" : "#4b5563",
-                    }}>R{race.round}</div>
-                    <FlagImg url={flagUrl} alt={race.circuit.country} size={20} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {race.name.replace(" Grand Prix", " GP")}
-                      </div>
-                      {wib && <div style={{ fontSize: 10, color: "#6b7280", fontFamily: "monospace" }}>{wib}</div>}
+                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                    background: isNext ? "#ef444418" : "#0f1219",
+                    border: `1px solid ${isNext ? "#ef444330" : "#1a1f2e"}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 8, fontWeight: 800, color: isNext ? "#ef4444" : "#374151",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>R{race.round}</div>
+                  <FlagImg url={flagUrl} alt={race.circuit.country} size={20} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {race.name.replace(" Grand Prix", " GP")}
                     </div>
-                    <span style={{ fontSize: 11, color: i === 0 ? "#ef4444" : "#4b5563", flexShrink: 0 }}>
-                      {days === 0 ? "🔥" : days === 1 ? "Besok" : `${days}h`}
-                    </span>
+                    {wib && <div style={{ fontSize: 9, color: "#4b5563", fontFamily: "'JetBrains Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{wib}</div>}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: isNext ? "#ef4444" : days < 14 ? "#fbbf24" : "#374151", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                    {days === 0 ? "HARI INI" : days === 1 ? "BESOK" : `${days}H`}
                   </div>
                 </Link>
               );
@@ -345,43 +383,32 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* News */}
+      {/* NEWS */}
       {news.length > 0 && (
-        <div style={{ marginTop: 16, animation: "fadeUp 0.4s ease 0.3s both" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>📰 BERITA TERBARU</span>
-            <Link href="/news" style={{ fontSize: 11, color: "#ef4444", textDecoration: "none" }}>Lihat semua →</Link>
-          </div>
-          <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ animation: "fadeUp 0.4s ease 0.22s both" }}>
+          <SectionHeader label="Berita Terbaru" href="/news" />
+          <div className="card">
             {news.map((item, i) => (
-              <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                <div style={{
-                  background: "#0d1117", border: "1px solid #1a1f2e",
-                  borderRadius: 10, padding: "10px 12px",
-                  display: "flex", gap: 10, alignItems: "flex-start",
-                  transition: "background 0.15s",
-                }}>
-                  {item.img && (
-                    <div style={{ width: 56, height: 44, flexShrink: 0, borderRadius: 6, overflow: "hidden", background: "#111" }}>
-                      <img src={item.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={e => { e.target.parentElement.style.display = "none"; }} />
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: SOURCE_COLORS[item.source] || "#ef4444" }}>
-                        {item.source?.toUpperCase()}
-                      </span>
-                      <span style={{ fontSize: 9, color: "#374151" }}>· {timeAgo(item.pub)}</span>
-                    </div>
-                    <div style={{
-                      fontSize: 12, fontWeight: 600, lineHeight: 1.4,
-                      overflow: "hidden", display: "-webkit-box",
-                      WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                    }}>{item.title}</div>
+              <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="news-row">
+                {item.img && (
+                  <div style={{ width: 58, height: 42, flexShrink: 0, borderRadius: 6, overflow: "hidden", background: "#111" }}>
+                    <img src={item.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      onError={e => { e.target.parentElement.style.display = "none"; }} />
                   </div>
-                  <span style={{ fontSize: 12, color: "#374151", flexShrink: 0 }}>↗</span>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1.5, color: SOURCE_COLORS[item.source] || "#ef4444", fontFamily: "'JetBrains Mono', monospace" }}>
+                      {item.source?.toUpperCase()}
+                    </span>
+                    <span style={{ fontSize: 9, color: "#2d3748" }}>·</span>
+                    <span style={{ fontSize: 9, color: "#374151", fontFamily: "'JetBrains Mono', monospace" }}>{timeAgo(item.pub)}</span>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.45, color: "#d1d5db", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                    {item.title}
+                  </div>
                 </div>
+                <span style={{ fontSize: 11, color: "#2d3748", flexShrink: 0, marginTop: 2 }}>↗</span>
               </a>
             ))}
           </div>
