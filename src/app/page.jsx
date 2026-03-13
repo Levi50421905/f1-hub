@@ -555,14 +555,14 @@ export default function HomePage() {
 }
 <button
   onClick={() => {
-    const isPWA =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.matchMedia("(display-mode: fullscreen)").matches ||
-      window.matchMedia("(display-mode: minimal-ui)").matches ||
-      window.navigator.standalone === true ||
-      document.referrer.includes("android-app://");
+    const sa = window.matchMedia("(display-mode: standalone)").matches;
+    const fu = window.matchMedia("(display-mode: fullscreen)").matches;
+    const mi = window.matchMedia("(display-mode: minimal-ui)").matches;
+    const ns = window.navigator.standalone === true;
+    const isPWA = sa || fu || mi || ns;
     const done = localStorage.getItem("f1-notif-onboarded");
-    alert(`isPWA: ${isPWA}\nonboarded: ${done}\nstandalone: ${window.matchMedia("(display-mode: standalone)").matches}\nreferrer: ${document.referrer}`);
+    const ref = document.referrer;
+    alert("isPWA: " + isPWA + "\nonboarded: " + done + "\nstandalone: " + sa + "\nreferrer: " + ref);
   }}
   style={{
     position: "fixed", bottom: 80, right: 16, zIndex: 9999,
