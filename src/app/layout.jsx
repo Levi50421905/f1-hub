@@ -1,4 +1,5 @@
 // src/app/layout.jsx
+import OnboardingNotif from "@/components/OnboardingNotif";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import PWAProvider from "@/components/PWAProvider";
@@ -8,9 +9,9 @@ export const metadata = {
   description: "Jadwal, klasemen, dan hasil race F1 — update otomatis",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon1.png",          // favicon utama
-    shortcut: "/icons/icon1.png",      // shortcut icon
-    apple: "/icons/icon1.png",      // apple touch icon
+    icon: "/icons/icon1.png",
+    shortcut: "/icons/icon1.png",
+    apple: "/icons/icon1.png",
   },
   appleWebApp: {
     capable: true,
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
           {children}
         </main>
         <PWAProvider />
+        <OnboardingNotif />
       </body>
     </html>
   );

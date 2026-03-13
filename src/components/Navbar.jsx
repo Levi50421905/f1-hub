@@ -4,25 +4,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Desktop: all 8 links
 const ALL_LINKS = [
-  { href: "/",            label: "Home",     icon: "⬡" },
-  { href: "/standings",   label: "Klasemen", icon: "⬡" },
-  { href: "/schedule",    label: "Kalender", icon: "⬡" },
-  { href: "/drivers",     label: "Driver",   icon: "⬡" },
-  { href: "/chart",       label: "Grafik",   icon: "⬡" },
-  { href: "/predict",     label: "Prediksi", icon: "⬡" },
-  { href: "/leaderboard", label: "Skor",     icon: "⬡" },
-  { href: "/news",        label: "Berita",   icon: "⬡" },
+  { href: "/",            label: "Home"     },
+  { href: "/standings",   label: "Klasemen" },
+  { href: "/schedule",    label: "Kalender" },
+  { href: "/drivers",     label: "Driver"   },
+  { href: "/chart",       label: "Grafik"   },
+  { href: "/predict",     label: "Prediksi" },
+  { href: "/leaderboard", label: "Skor"     },
+  { href: "/news",        label: "Berita"   },
 ];
 
-// Mobile bottom: 5 most important only
 const MOBILE_LINKS = [
-  { href: "/",          label: "Home",     svg: <HomeIcon /> },
+  { href: "/",          label: "Home",     svg: <HomeIcon />   },
   { href: "/standings", label: "Klasemen", svg: <TrophyIcon /> },
-  { href: "/schedule",  label: "Kalender", svg: <CalIcon /> },
+  { href: "/schedule",  label: "Kalender", svg: <CalIcon />    },
   { href: "/predict",   label: "Prediksi", svg: <TargetIcon /> },
-  { href: "/news",      label: "Berita",   svg: <NewsIcon /> },
+  { href: "/news",      label: "Berita",   svg: <NewsIcon />   },
 ];
 
 function HomeIcon() {
@@ -47,55 +45,6 @@ export default function Navbar() {
 
   return (
     <>
-      <style>{`
-        .desktop-nav  { display: flex; }
-        .mobile-bar   { display: none; }
-        .mobile-nav   { display: none; }
-        .mobile-space { display: none; }
-
-        @media (max-width: 640px) {
-          .desktop-nav  { display: none !important; }
-          .mobile-bar   { display: flex !important; }
-          .mobile-nav   { display: flex !important; }
-          .mobile-space { display: block !important; }
-        }
-
-        .nav-link {
-          display: flex; align-items: center; gap: 6px;
-          padding: 6px 12px; border-radius: 8px;
-          font-size: 13px; font-weight: 500;
-          color: var(--text-muted);
-          text-decoration: none;
-          transition: all 0.15s ease;
-          white-space: nowrap;
-          font-family: 'Outfit', sans-serif;
-        }
-        .nav-link:hover { color: var(--text-secondary); background: var(--bg-raised); }
-        .nav-link.active { color: var(--text-primary); background: var(--bg-raised); font-weight: 600; }
-        .nav-link.active::after {
-          content: ''; position: absolute; bottom: -1px; left: 12px; right: 12px;
-          height: 2px; background: var(--red); border-radius: 2px 2px 0 0;
-        }
-
-        .mob-tab {
-          display: flex; flex-direction: column; align-items: center; gap: 4px;
-          flex: 1; padding: 10px 4px 6px;
-          color: var(--text-muted);
-          text-decoration: none;
-          transition: color 0.15s;
-          position: relative;
-        }
-        .mob-tab.active { color: var(--red); }
-        .mob-tab.active::before {
-          content: ''; position: absolute; top: 0; left: 25%; right: 25%;
-          height: 2px; background: var(--red); border-radius: 0 0 3px 3px;
-        }
-        .mob-tab-label {
-          font-size: 10px; font-weight: 500; letter-spacing: 0.2px;
-          font-family: 'Outfit', sans-serif;
-        }
-      `}</style>
-
       {/* ── DESKTOP NAV ── */}
       <nav className="desktop-nav" style={{
         background: "rgba(12, 14, 22, 0.92)",
@@ -107,44 +56,29 @@ export default function Navbar() {
         position: "sticky", top: 0, zIndex: 200,
         height: 52,
       }}>
-        {/* Logo */}
         <Link href="/" style={{
           display: "flex", alignItems: "center", gap: 2,
           marginRight: 32, textDecoration: "none", flexShrink: 0,
         }}>
-          <span style={{
-            fontSize: 20, fontWeight: 900, color: "var(--red)",
-            fontFamily: "'Barlow Condensed', sans-serif",
-            letterSpacing: -0.5, lineHeight: 1,
-          }}>F1</span>
-          <span style={{
-            fontSize: 14, fontWeight: 700, color: "var(--text-primary)",
-            letterSpacing: 2, fontFamily: "'Barlow Condensed', sans-serif",
-          }}>HUB</span>
+          <span style={{ fontSize: 20, fontWeight: 900, color: "var(--red)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: -0.5, lineHeight: 1 }}>F1</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", letterSpacing: 2, fontFamily: "'Barlow Condensed', sans-serif" }}>HUB</span>
         </Link>
 
-        {/* Links */}
         <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, position: "relative" }}>
-          {ALL_LINKS.map(({ href, label }) => {
-            const active = isActive(href);
-            return (
-              <Link key={href} href={href} className={`nav-link${active ? " active" : ""}`}
-                style={{ position: "relative" }}>
-                {label}
-              </Link>
-            );
-          })}
+          {ALL_LINKS.map(({ href, label }) => (
+            <Link key={href} href={href}
+              className={`nav-link${isActive(href) ? " active" : ""}`}
+              style={{ position: "relative" }}>
+              {label}
+            </Link>
+          ))}
         </div>
 
-        {/* Season badge */}
         <div style={{
-          fontSize: 11, fontWeight: 700,
-          color: "var(--text-muted)",
-          background: "var(--bg-raised)",
-          border: "1px solid var(--border)",
+          fontSize: 11, fontWeight: 700, color: "var(--text-muted)",
+          background: "var(--bg-raised)", border: "1px solid var(--border)",
           borderRadius: 6, padding: "3px 8px",
-          fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: 1,
+          fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1,
         }}>2026</div>
       </nav>
 
@@ -178,15 +112,12 @@ export default function Navbar() {
         paddingBottom: "env(safe-area-inset-bottom)",
         justifyContent: "stretch", alignItems: "stretch",
       }}>
-        {MOBILE_LINKS.map(({ href, label, svg }) => {
-          const active = isActive(href);
-          return (
-            <Link key={href} href={href} className={`mob-tab${active ? " active" : ""}`}>
-              {svg}
-              <span className="mob-tab-label">{label}</span>
-            </Link>
-          );
-        })}
+        {MOBILE_LINKS.map(({ href, label, svg }) => (
+          <Link key={href} href={href} className={`mob-tab${isActive(href) ? " active" : ""}`}>
+            {svg}
+            <span className="mob-tab-label">{label}</span>
+          </Link>
+        ))}
       </nav>
 
       <div className="mobile-space" style={{ height: 64 }} />
