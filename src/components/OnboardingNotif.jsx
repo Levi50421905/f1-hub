@@ -57,6 +57,8 @@ export default function OnboardingNotif({ onDone }) {
     fp3: false, sprintRace: false, qualifying: true, race: true,
   });
 
+  const ONBOARD_VERSION = "v1";
+
   useEffect(() => {
     const isPWA =
       window.matchMedia("(display-mode: standalone)").matches ||
@@ -66,8 +68,16 @@ export default function OnboardingNotif({ onDone }) {
       document.referrer.includes("android-app://");
 
     const done = localStorage.getItem("f1-notif-onboarded");
-    console.log("[F1 Hub] isPWA:", isPWA, "| onboarded:", done);
-    if (isPWA && !done) setTimeout(() => setVisible(true), 500);
+
+    // Reset otomatis kalau versi onboarding berubah
+    if (done && done !== ONBOARD_VERSION) {
+      localStorage.removeItem("f1-notif-onboarded");
+      localStorage.removeItem("f1-reminders");
+      localStorage.removeItem("f1-notif-prefs");
+    }
+
+    const isOnboarded = localStorage.getItem("f1-notif-onboarded") === ONBOARD_VERSION;
+    if (isPWA && !isOnboarded) setTimeout(() => setVisible(true), 500);
     if ("Notification" in window) setPermission(Notification.permission);
   }, []);
 
@@ -123,7 +133,7 @@ export default function OnboardingNotif({ onDone }) {
 
   function saveAndFinish() {
     localStorage.setItem("f1-notif-prefs", JSON.stringify({ sessions: selected, reminderMins, raceWeek }));
-    localStorage.setItem("f1-notif-onboarded", "1");
+    localStorage.setItem("f1-notif-onboarded", ONBOARD_VERSION);
     setVisible(false);
     setTimeout(() => onDone?.(), 350);
   }

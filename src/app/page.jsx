@@ -550,21 +550,6 @@ export default function HomePage() {
           </Card>
         </div>
       )}
-      <button
-  onClick={() => {
-    localStorage.removeItem("f1-notif-onboarded");
-    localStorage.removeItem("f1-reminders");
-    localStorage.removeItem("f1-notif-prefs");
-    alert("Reset! Tutup dan buka ulang app.");
-  }}
-  style={{
-    position: "fixed", bottom: 80, right: 16, zIndex: 9999,
-    background: "#ef4444", color: "#fff", border: "none",
-    borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
-  }}
->
-  RESET
-</button>
     </div>
   );
 }
