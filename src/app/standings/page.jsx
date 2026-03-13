@@ -228,7 +228,7 @@ export default function StandingsPage() {
         }}>
           {constructors.constructors.map((c, i) => {
             const color   = getTeamColor(c.team.id);
-            const flagUrl = getCountryFlagImg(c.team.nationality);
+            const flagUrl = getFlagImg(c.team.nationality);
             const pct     = Math.round((c.points / maxConPts) * 100);
             const isLead  = i === 0;
             return (
