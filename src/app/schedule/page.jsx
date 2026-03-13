@@ -3,11 +3,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCountryFlag } from "@/lib/teamColors";
+import { getCountryFlagImg } from "@/lib/teamColors";
 import { SCHEDULE_2026 } from "@/lib/schedule2026";
 
-// Format compact: "Sab 7/3 · 19:00 WIB"
-// Pakai timezone Asia/Jakarta langsung — tidak perlu +7 manual
+function FlagImg({ url, alt, size = 20 }) {
+  if (!url) return <span style={{ fontSize: size }}>🏁</span>;
+  return (
+    <img
+      src={url}
+      alt={alt || "flag"}
+      style={{ width: size + 2, height: "auto", borderRadius: 2, display: "block", flexShrink: 0 }}
+    />
+  );
+}
+
 function fmtCompact(dateStr, timeStr) {
   if (!dateStr) return "TBA";
   try {
@@ -21,7 +30,6 @@ function fmtCompact(dateStr, timeStr) {
   } catch { return "TBA"; }
 }
 
-// isPast check
 function toWIB(dateStr, timeStr) {
   if (!dateStr) return null;
   try {
@@ -35,11 +43,11 @@ function getSessions(race) {
   const fb       = SCHEDULE_2026[race.round] || {};
   const isSprint = !!(race.sprint || fb.sprint);
   return [
-    { key: "fp1",        label: "FP1",        icon: "🟡", date: fb.fp1?.date,        time: fb.fp1?.time        },
-    { key: "fp2",        label: isSprint ? "Sprint Q" : "FP2", icon: isSprint ? "⚡" : "🟡", date: fb.fp2?.date, time: fb.fp2?.time },
-    { key: "fp3",        label: isSprint ? "Sprint"   : "FP3", icon: isSprint ? "⚡" : "🟡", date: fb.fp3?.date, time: fb.fp3?.time },
-    { key: "qualifying", label: "Qualifying",  icon: "🔵", date: fb.qualifying?.date, time: fb.qualifying?.time },
-    { key: "race",       label: "RACE",        icon: "🏁", date: fb.race?.date,       time: fb.race?.time       },
+    { key: "fp1",        label: "FP1",                          icon: "🟡", date: fb.fp1?.date,        time: fb.fp1?.time        },
+    { key: "fp2",        label: isSprint ? "Sprint Q" : "FP2",  icon: isSprint ? "⚡" : "🟡", date: fb.fp2?.date, time: fb.fp2?.time },
+    { key: "fp3",        label: isSprint ? "Sprint"   : "FP3",  icon: isSprint ? "⚡" : "🟡", date: fb.fp3?.date, time: fb.fp3?.time },
+    { key: "qualifying", label: "Qualifying",                    icon: "🔵", date: fb.qualifying?.date, time: fb.qualifying?.time },
+    { key: "race",       label: "RACE",                          icon: "🏁", date: fb.race?.date,       time: fb.race?.time       },
   ].filter(s => s.date);
 }
 
@@ -100,8 +108,9 @@ export default function SchedulePage() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1, marginRight: 12 }}>
-              <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 4, lineHeight: 1.2 }}>
-                {getCountryFlag(nextRace.circuit.country)} {nextRace.name}
+              <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 4, lineHeight: 1.2, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <FlagImg url={getCountryFlagImg(nextRace.circuit.country)} alt={nextRace.circuit.country} size={18} />
+                {nextRace.name}
               </div>
               <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 10 }}>
                 {nextRace.circuit.name}
@@ -148,14 +157,15 @@ export default function SchedulePage() {
       ) : (
         <div style={{ display: "grid", gap: 6 }}>
           {filtered.map((race, i) => {
-            const fb      = SCHEDULE_2026[race.round] || {};
-            const isNext  = race === nextRace;
-            const done    = race.status === "finished";
-            const days    = daysUntil(race.date);
-            const isOpen  = expanded === race.round;
+            const fb       = SCHEDULE_2026[race.round] || {};
+            const isNext   = race === nextRace;
+            const done     = race.status === "finished";
+            const days     = daysUntil(race.date);
+            const isOpen   = expanded === race.round;
             const isSprint = !!(race.sprint || fb.sprint);
-            const rWIB = fmtCompact(fb.race?.date, fb.race?.time);
+            const rWIB     = fmtCompact(fb.race?.date, fb.race?.time);
             const sessions = getSessions(race);
+            const flagUrl  = getCountryFlagImg(race.circuit.country);
 
             return (
               <div key={race.round} style={{ animation: `fadeUp 0.25s ease ${i*15}ms both` }}>
@@ -181,7 +191,7 @@ export default function SchedulePage() {
                     color: isNext ? "#ef4444" : "#4b5563",
                   }}>{race.round}</div>
 
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{getCountryFlag(race.circuit.country)}</span>
+                  <FlagImg url={flagUrl} alt={race.circuit.country} size={20} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, marginBottom: 1 }}>
@@ -191,7 +201,6 @@ export default function SchedulePage() {
                       {isSprint && <span style={{ fontSize: 8, background: "#fbbf2420", border: "1px solid #fbbf2433", borderRadius: 3, padding: "1px 4px", color: "#fbbf24", flexShrink: 0 }}>S</span>}
                       {done && <span style={{ fontSize: 8, background: "#22c55e20", border: "1px solid #22c55e33", borderRadius: 3, padding: "1px 4px", color: "#22c55e", flexShrink: 0 }}>✓</span>}
                     </div>
-                    {/* Jam race — 1 baris, tidak wrap */}
                     <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {rWIB}
                     </div>

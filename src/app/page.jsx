@@ -3,8 +3,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getTeamColor, getFlag, getCountryFlag } from "@/lib/teamColors";
+import { getTeamColor, getFlagImg, getCountryFlagImg } from "@/lib/teamColors";
 import { SCHEDULE_2026 } from "@/lib/schedule2026";
+
+function FlagImg({ url, alt, size = 22 }) {
+  if (!url) return <span style={{ fontSize: size }}>🏁</span>;
+  return (
+    <img
+      src={url}
+      alt={alt || "flag"}
+      style={{ width: size + 2, height: "auto", borderRadius: 2, display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}
+    />
+  );
+}
 
 function fmtWIB(dateStr, timeStr) {
   if (!dateStr) return null;
@@ -53,7 +64,7 @@ export default function HomePage() {
     nextRace.qualifying?.time || fb.qualifying?.time
   ) : null;
 
-  // Countdown timer live ke race berikutnya
+  // Countdown timer
   useEffect(() => {
     if (!nextRace) return;
     const fb2 = SCHEDULE_2026[nextRace.round] || {};
@@ -76,7 +87,7 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [nextRace]);
 
-  // Weather dari Open-Meteo (gratis, no API key)
+  // Weather
   useEffect(() => {
     if (!nextRace?.circuit?.lat || !nextRace?.circuit?.long) return;
     const lat = nextRace.circuit.lat;
@@ -148,14 +159,14 @@ export default function HomePage() {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1, marginRight: 16 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4, lineHeight: 1.2 }}>
-                {getCountryFlag(nextRace.circuit.country)} {nextRace.name}
+              <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, marginBottom: 4, lineHeight: 1.2, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <FlagImg url={getCountryFlagImg(nextRace.circuit.country)} alt={nextRace.circuit.country} size={20} />
+                {nextRace.name}
               </h2>
               <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
                 {nextRace.circuit.name}
               </div>
 
-              {/* Quali & Race time */}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {qualiWIB && (
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -176,12 +187,12 @@ export default function HomePage() {
             <div style={{ textAlign: "center", flexShrink: 0 }}>
               {countdown ? (
                 <div>
-                  {countdown.d > 0 ? (
+                  {countdown.d > 0 && (
                     <div>
                       <div style={{ fontSize: 42, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{countdown.d}</div>
                       <div style={{ fontSize: 9, color: "#6b7280", marginBottom: 4 }}>HARI LAGI</div>
                     </div>
-                  ) : null}
+                  )}
                   <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
                     {[
                       { v: pad(countdown.h), l: "JAM" },
@@ -260,7 +271,8 @@ export default function HomePage() {
           </div>
           <div style={{ display: "grid", gap: 6 }}>
             {top5.length > 0 ? top5.map((d, i) => {
-              const color = getTeamColor(d.team.id);
+              const color   = getTeamColor(d.team.id);
+              const flagUrl = getFlagImg(d.driver.nationality);
               return (
                 <div key={d.driver.id} style={{
                   background: "#0d1117", border: `1px solid ${i === 0 ? color + "33" : "#1a1f2e"}`,
@@ -268,7 +280,7 @@ export default function HomePage() {
                   display: "flex", alignItems: "center", gap: 10,
                 }}>
                   <span style={{ fontSize: 12, fontWeight: 800, color: i === 0 ? color : "#4b5563", minWidth: 20 }}>P{i+1}</span>
-                  <span style={{ fontSize: 16 }}>{getFlag(d.driver.nationality)}</span>
+                  <FlagImg url={flagUrl} alt={d.driver.nationality} size={20} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{d.driver.code || d.driver.lastName}</div>
                     <div style={{ fontSize: 10, color }}>{d.team.name}</div>
@@ -296,9 +308,10 @@ export default function HomePage() {
           </div>
           <div style={{ display: "grid", gap: 6 }}>
             {upcoming.map((race, i) => {
-              const days = daysUntil(race.date);
-              const fb2  = SCHEDULE_2026[race.round] || {};
-              const wib  = fmtWIB(race.date || fb2.race?.date, race.time || fb2.race?.time);
+              const days    = daysUntil(race.date);
+              const fb2     = SCHEDULE_2026[race.round] || {};
+              const wib     = fmtWIB(race.date || fb2.race?.date, race.time || fb2.race?.time);
+              const flagUrl = getCountryFlagImg(race.circuit.country);
               return (
                 <Link key={race.round} href={`/race/${race.round}`} style={{ textDecoration: "none" }}>
                   <div style={{
@@ -314,7 +327,7 @@ export default function HomePage() {
                       fontSize: 10, fontWeight: 800,
                       color: i === 0 ? "#ef4444" : "#4b5563",
                     }}>R{race.round}</div>
-                    <span style={{ fontSize: 18, flexShrink: 0 }}>{getCountryFlag(race.circuit.country)}</span>
+                    <FlagImg url={flagUrl} alt={race.circuit.country} size={20} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {race.name.replace(" Grand Prix", " GP")}
@@ -331,7 +344,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      {/* News preview */}
+
+      {/* News */}
       {news.length > 0 && (
         <div style={{ marginTop: 16, animation: "fadeUp 0.4s ease 0.3s both" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
