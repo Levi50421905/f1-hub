@@ -1,6 +1,5 @@
 "use client";
 // src/app/predict/page.jsx
-// Prediksi top 5 — simpan ke Redis, bisa main bareng
 
 import { useState, useEffect, useRef } from "react";
 import { DRIVERS_2026 } from "@/lib/drivers2026";
@@ -26,7 +25,6 @@ function calcScore(picks, actual) {
   return score;
 }
 
-// ── Driver Picker (bottom sheet modal) ──────────────────────
 function DriverPicker({ open, onClose, onSelect, selected, disabledIds, posLabel }) {
   const [search, setSearch] = useState("");
   const inputRef = useRef(null);
@@ -46,56 +44,25 @@ function DriverPicker({ open, onClose, onSelect, selected, disabledIds, posLabel
   );
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
-        zIndex: 1000, display: "flex", alignItems: "flex-end",
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: 480, margin: "0 auto",
-          background: "#0d1117", borderRadius: "16px 16px 0 0",
-          border: "1px solid #1f2937", borderBottom: "none",
-          maxHeight: "70vh", display: "flex", flexDirection: "column",
-          animation: "slideUp 0.2s ease",
-        }}
-      >
-        {/* Header */}
-        <div style={{ padding: "16px 16px 0", flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>Pilih Driver — {posLabel}</div>
-            <button
-              onClick={onClose}
-              style={{ background: "none", border: "none", color: "#6b7280", fontSize: 18, cursor: "pointer", padding: 4 }}
-            >✕</button>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:1000, display:"flex", alignItems:"flex-end" }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width:"100%", maxWidth:480, margin:"0 auto",
+        background:"var(--bg-surface)", borderRadius:"16px 16px 0 0",
+        border:"1px solid var(--border)", borderBottom:"none",
+        maxHeight:"70vh", display:"flex", flexDirection:"column",
+        animation:"slideUp 0.2s ease",
+      }}>
+        <div style={{ padding:"16px 16px 0", flexShrink:0 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:"var(--text-primary)" }}>Pilih Driver — {posLabel}</div>
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"var(--text-secondary)", fontSize:18, cursor:"pointer", padding:4 }}>✕</button>
           </div>
-          <input
-            ref={inputRef}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+          <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama driver atau tim..."
-            style={{
-              width: "100%", background: "#1a1f2e", border: "1px solid #1f2937",
-              borderRadius: 10, padding: "10px 14px",
-              color: "#f9fafb", fontSize: 13, fontFamily: "inherit",
-              outline: "none", marginBottom: 12,
-            }}
-          />
+            style={{ width:"100%", background:"var(--bg-raised)", border:"1px solid var(--border)", borderRadius:10, padding:"10px 14px", color:"var(--text-primary)", fontSize:13, fontFamily:"inherit", outline:"none", marginBottom:12 }} />
         </div>
-        {/* Driver list */}
-        <div style={{ overflowY: "auto", padding: "0 16px 16px" }}>
-          {/* Clear option */}
-          <div
-            onClick={() => { onSelect(null); onClose(); }}
-            style={{
-              padding: "10px 14px", borderRadius: 10, marginBottom: 6,
-              background: "#1a1f2e", border: "1px solid #1f2937",
-              cursor: "pointer", fontSize: 12, color: "#6b7280",
-            }}
-          >
+        <div style={{ overflowY:"auto", padding:"0 16px 16px" }}>
+          <div onClick={() => { onSelect(null); onClose(); }} style={{ padding:"10px 14px", borderRadius:10, marginBottom:6, background:"var(--bg-raised)", border:"1px solid var(--border)", cursor:"pointer", fontSize:12, color:"var(--text-secondary)" }}>
             — Kosongkan pilihan
           </div>
           {filtered.map(driver => {
@@ -103,34 +70,22 @@ function DriverPicker({ open, onClose, onSelect, selected, disabledIds, posLabel
             const isDisabled = disabledIds.includes(driver.id) && !isSelected;
             const color = getTeamColor(driver.team);
             return (
-              <div
-                key={driver.id}
-                onClick={() => { if (!isDisabled) { onSelect(driver.id); onClose(); }}}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "10px 14px", borderRadius: 10, marginBottom: 4,
-                  background: isSelected ? "#1a1f2e" : "transparent",
-                  border: `1px solid ${isSelected ? color + "50" : "transparent"}`,
-                  cursor: isDisabled ? "not-allowed" : "pointer",
-                  opacity: isDisabled ? 0.35 : 1,
-                  transition: "background 0.1s",
-                }}
-              >
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: color + "20", border: `1px solid ${color}40`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 900, color, flexShrink: 0,
-                }}>
+              <div key={driver.id} onClick={() => { if (!isDisabled) { onSelect(driver.id); onClose(); }}} style={{
+                display:"flex", alignItems:"center", gap:12,
+                padding:"10px 14px", borderRadius:10, marginBottom:4,
+                background: isSelected ? "var(--bg-raised)" : "transparent",
+                border:`1px solid ${isSelected ? color+"50" : "transparent"}`,
+                cursor: isDisabled ? "not-allowed" : "pointer",
+                opacity: isDisabled ? 0.35 : 1, transition:"background 0.1s",
+              }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:color+"20", border:`1px solid ${color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:900, color, flexShrink:0 }}>
                   {driver.num}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? color : "#f9fafb" }}>
-                    {driver.firstName} {driver.lastName}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#4b5563" }}>{driver.teamName}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: isSelected ? color : "var(--text-primary)" }}>{driver.firstName} {driver.lastName}</div>
+                  <div style={{ fontSize:10, color:"var(--text-secondary)" }}>{driver.teamName}</div>
                 </div>
-                {isSelected && <span style={{ fontSize: 14, color }}>✓</span>}
+                {isSelected && <span style={{ fontSize:14, color }}>✓</span>}
               </div>
             );
           })}
@@ -140,7 +95,6 @@ function DriverPicker({ open, onClose, onSelect, selected, disabledIds, posLabel
   );
 }
 
-// ── Main page ────────────────────────────────────────────────
 export default function PredictPage() {
   const [schedule,    setSchedule]    = useState([]);
   const [results,     setResults]     = useState({});
@@ -152,21 +106,19 @@ export default function PredictPage() {
   const [playerName,  setPlayerName]  = useState("");
   const [nameInput,   setNameInput]   = useState("");
   const [showSetup,   setShowSetup]   = useState(false);
-  const [picker,      setPicker]      = useState(null); // { round, posIdx }
+  const [picker,      setPicker]      = useState(null);
 
   useEffect(() => {
     const name = localStorage.getItem("f1-player-name") || "";
     setPlayerName(name);
     setNameInput(name);
     if (!name) setShowSetup(true);
-
     fetch("/api/schedule")
       .then(r => r.json())
       .then(json => { if (json.success) setSchedule(json.data); })
       .finally(() => setLoading(false));
   }, []);
 
-  // Load prediksi dari Redis setelah tahu player name
   useEffect(() => {
     if (!playerName) return;
     fetch(`/api/predictions?player=${encodeURIComponent(playerName.toLowerCase().trim())}`)
@@ -174,15 +126,12 @@ export default function PredictPage() {
       .then(json => {
         if (json.success && json.data) {
           const formatted = {};
-          Object.entries(json.data).forEach(([round, val]) => {
-            formatted[round] = val?.picks || val || [];
-          });
+          Object.entries(json.data).forEach(([round, val]) => { formatted[round] = val?.picks || val || []; });
           setPreds(formatted);
         }
       });
   }, [playerName]);
 
-  // Fetch hasil race finished
   useEffect(() => {
     const finished = schedule.filter(r => r.status === "finished");
     finished.forEach(race => {
@@ -208,48 +157,32 @@ export default function PredictPage() {
 
   async function setPick(round, posIdx, driverId) {
     if (!playerName) { setShowSetup(true); return; }
-
     setPreds(prev => {
-      const picks = [...(prev[round] || [null, null, null, null, null])];
-      // Cegah duplikat
+      const picks = [...(prev[round] || [null,null,null,null,null])];
       const existingIdx = picks.indexOf(driverId);
       if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
       picks[posIdx] = driverId || null;
       return { ...prev, [round]: picks };
     });
-
-    // Auto-save ke Redis
     setSaving(true);
     try {
-      const picks = [...(predictions[round] || [null, null, null, null, null])];
+      const picks = [...(predictions[round] || [null,null,null,null,null])];
       const existingIdx = picks.indexOf(driverId);
       if (existingIdx !== -1 && existingIdx !== posIdx) picks[existingIdx] = null;
       picks[posIdx] = driverId || null;
-
-      await fetch("/api/predictions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player: playerName, round, picks }),
-      });
+      await fetch("/api/predictions", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ player:playerName, round, picks }) });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      console.error("Save failed:", e);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { console.error("Save failed:", e); }
+    finally { setSaving(false); }
   }
 
   const totalScore = Object.entries(predictions).reduce((sum, [round, picks]) => {
-    const actual = results[parseInt(round)];
-    const score  = calcScore(picks, actual);
+    const score = calcScore(picks, results[parseInt(round)]);
     return sum + (score || 0);
   }, 0);
 
-  const races = schedule.filter(r =>
-    r.status === "upcoming" ||
-    (r.status === "finished" && predictions[r.round]?.some(p => p))
-  );
+  const races = schedule.filter(r => r.status === "upcoming" || (r.status === "finished" && predictions[r.round]?.some(p => p)));
 
   return (
     <div>
@@ -259,119 +192,66 @@ export default function PredictPage() {
         @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
       `}</style>
 
-      {/* Setup name modal */}
+      {/* Setup modal */}
       {showSetup && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
-          zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 20,
-        }}>
-          <div style={{
-            background: "#0d1117", border: "1px solid #1f2937",
-            borderRadius: 16, padding: 24, width: "100%", maxWidth: 360,
-          }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>👋</div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Siapa nama kamu?</div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
-              Nama ini akan muncul di papan skor bersama.
-            </div>
-            <input
-              value={nameInput}
-              onChange={e => setNameInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && saveName()}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div style={{ background:"var(--bg-surface)", border:"1px solid var(--border)", borderRadius:16, padding:24, width:"100%", maxWidth:360 }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>👋</div>
+            <div style={{ fontSize:16, fontWeight:700, marginBottom:6, color:"var(--text-primary)" }}>Siapa nama kamu?</div>
+            <div style={{ fontSize:12, color:"var(--text-secondary)", marginBottom:16 }}>Nama ini akan muncul di papan skor bersama.</div>
+            <input value={nameInput} onChange={e => setNameInput(e.target.value)} onKeyDown={e => e.key==="Enter" && saveName()}
               placeholder="Contoh: arsa"
-              style={{
-                width: "100%", background: "#1a1f2e", border: "1px solid #1f2937",
-                borderRadius: 10, padding: "10px 14px",
-                color: "#f9fafb", fontSize: 14, fontFamily: "inherit",
-                outline: "none", marginBottom: 12,
-              }}
-            />
-            <button
-              onClick={saveName}
-              style={{
-                width: "100%", background: "#ef4444", border: "none",
-                borderRadius: 10, padding: "11px", color: "#fff",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
-              }}
-            >
+              style={{ width:"100%", background:"var(--bg-raised)", border:"1px solid var(--border)", borderRadius:10, padding:"10px 14px", color:"var(--text-primary)", fontSize:14, fontFamily:"inherit", outline:"none", marginBottom:12 }} />
+            <button onClick={saveName} style={{ width:"100%", background:"var(--red)", border:"none", borderRadius:10, padding:"11px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}>
               Simpan & Mulai
             </button>
             {playerName && (
-              <button
-                onClick={() => setShowSetup(false)}
-                style={{
-                  width: "100%", background: "transparent", border: "none",
-                  padding: "8px", color: "#6b7280", fontSize: 12,
-                  cursor: "pointer", marginTop: 8,
-                }}
-              >
-                Batal
-              </button>
+              <button onClick={() => setShowSetup(false)} style={{ width:"100%", background:"transparent", border:"none", padding:"8px", color:"var(--text-secondary)", fontSize:12, cursor:"pointer", marginTop:8 }}>Batal</button>
             )}
           </div>
         </div>
       )}
 
-      {/* Driver Picker */}
       {picker && (
-        <DriverPicker
-          open={!!picker}
-          onClose={() => setPicker(null)}
+        <DriverPicker open={!!picker} onClose={() => setPicker(null)}
           onSelect={driverId => setPick(picker.round, picker.posIdx, driverId)}
           selected={predictions[picker.round]?.[picker.posIdx]}
           disabledIds={(predictions[picker.round] || []).filter(Boolean)}
-          posLabel={POSITIONS[picker.posIdx].label}
-        />
+          posLabel={POSITIONS[picker.posIdx].label} />
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, marginBottom: 8, fontFamily: "monospace" }}>
-          🎯 PREDIKSI
+      <div style={{
+        background: "linear-gradient(135deg, #10060c 0%, #0e0618 50%, #0c0e1a 100%)",
+        border: "1px solid #2a1535",
+        borderRadius: "var(--r-xl)", padding: "24px 24px 20px",
+        marginBottom: 20, position: "relative", overflow: "hidden",
+        animation: "fadeUp 0.35s ease",
+      }}>
+        <div style={{ position:"absolute", top:-50, right:-50, width:180, height:180, background:"radial-gradient(circle, rgba(232,52,74,0.1) 0%, transparent 65%)", pointerEvents:"none" }} />
+        <div style={{ fontSize:10, color:"var(--red)", letterSpacing:3, marginBottom:8, fontFamily:"'JetBrains Mono',monospace", display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ width:16, height:1, background:"var(--red)" }} />
+          PREDIKSI
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, marginBottom: 4 }}>
-              Tebak Podium
-            </h1>
-            <p style={{ fontSize: 12, color: "#6b7280" }}>
-              Tebak P1–P5 sebelum race dimulai
-            </p>
+            <h1 style={{ fontSize:30, fontWeight:900, letterSpacing:-1, marginBottom:4, color:"var(--text-primary)", fontFamily:"'Barlow Condensed',sans-serif" }}>Tebak Podium</h1>
+            <p style={{ fontSize:11, color:"var(--text-secondary)" }}>Tebak P1–P5 sebelum race dimulai</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
             {totalScore > 0 && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>{totalScore}</div>
-                <div style={{ fontSize: 9, color: "#6b7280" }}>TOTAL POIN</div>
+              <div style={{ textAlign:"center" }}>
+                <div style={{ fontSize:28, fontWeight:900, color:"var(--gold)", lineHeight:1 }}>{totalScore}</div>
+                <div style={{ fontSize:9, color:"var(--text-secondary)" }}>TOTAL POIN</div>
               </div>
             )}
-            {/* Player name + change */}
-            <div style={{
-              background: "#0d1117", border: "1px solid #1f2937",
-              borderRadius: 10, padding: "8px 12px",
-              display: "flex", alignItems: "center", gap: 8,
-            }}>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>👤</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#f9fafb" }}>
-                {playerName || "—"}
-              </span>
-              <button
-                onClick={() => setShowSetup(true)}
-                style={{
-                  background: "none", border: "none",
-                  fontSize: 10, color: "#4b5563", cursor: "pointer", padding: 0,
-                }}
-              >
-                ganti
-              </button>
+            <div style={{ background:"var(--bg-raised)", border:"1px solid var(--border)", borderRadius:10, padding:"8px 12px", display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:12, color:"var(--text-secondary)" }}>👤</span>
+              <span style={{ fontSize:12, fontWeight:700, color:"var(--text-primary)" }}>{playerName || "—"}</span>
+              <button onClick={() => setShowSetup(true)} style={{ background:"none", border:"none", fontSize:10, color:"var(--text-secondary)", cursor:"pointer", padding:0 }}>ganti</button>
             </div>
-            <Link href="/leaderboard" style={{
-              background: "#1a1f2e", border: "1px solid #1f2937",
-              borderRadius: 10, padding: "8px 14px",
-              fontSize: 12, fontWeight: 700, color: "#f9fafb",
-              textDecoration: "none", display: "flex", alignItems: "center", gap: 6,
-            }}>
+            <Link href="/leaderboard" style={{ background:"var(--bg-raised)", border:"1px solid var(--border)", borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, color:"var(--text-primary)", textDecoration:"none", display:"flex", alignItems:"center", gap:6 }}>
               🏆 Papan Skor
             </Link>
           </div>
@@ -379,157 +259,107 @@ export default function PredictPage() {
       </div>
 
       {/* Scoring guide */}
-      <div style={{
-        background: "#0d1117", border: "1px solid #1f2937",
-        borderRadius: 12, padding: "10px 14px", marginBottom: 20,
-        display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: "#6b7280",
-      }}>
-        <span>🎯 Posisi tepat = <strong style={{ color: "#22c55e" }}>3 poin</strong></span>
-        <span>✅ Ada di top 5 = <strong style={{ color: "#fbbf24" }}>1 poin</strong></span>
-        <span>❌ Meleset = <strong style={{ color: "#ef4444" }}>0 poin</strong></span>
-        <span style={{ marginLeft: "auto", color: "#374151" }}>maks 15 poin/race</span>
+      <div style={{ background:"var(--bg-surface)", border:"1px solid var(--border)", borderRadius:12, padding:"10px 14px", marginBottom:20, display:"flex", gap:16, flexWrap:"wrap", fontSize:12, color:"var(--text-secondary)" }}>
+        <span>🎯 Posisi tepat = <strong style={{ color:"var(--green)" }}>3 poin</strong></span>
+        <span>✅ Ada di top 5 = <strong style={{ color:"var(--gold)" }}>1 poin</strong></span>
+        <span>❌ Meleset = <strong style={{ color:"var(--red)" }}>0 poin</strong></span>
+        <span style={{ marginLeft:"auto", color:"var(--text-muted)" }}>maks 15 poin/race</span>
       </div>
 
-      {/* Auto-save status */}
       {(saving || saved) && (
-        <div style={{
-          fontSize: 11, color: saving ? "#fbbf24" : "#22c55e",
-          marginBottom: 12, fontFamily: "monospace",
-        }}>
+        <div style={{ fontSize:11, color: saving ? "var(--gold)" : "var(--green)", marginBottom:12, fontFamily:"monospace" }}>
           {saving ? "⏳ Menyimpan..." : "✓ Tersimpan"}
         </div>
       )}
 
-      {/* Race list */}
       {loading ? (
-        <div style={{ display: "grid", gap: 10 }}>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} style={{ height: 80, background: "#0d1117", borderRadius: 12, animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ display:"grid", gap:10 }}>
+          {[...Array(3)].map((_,i) => (
+            <div key={i} style={{ height:80, background:"var(--bg-surface)", borderRadius:12, border:"1px solid var(--border)", animation:"pulse 1.5s ease infinite" }} />
           ))}
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display:"grid", gap:12 }}>
           {races.map((race, i) => {
             const isFinished = race.status === "finished";
-            const picks  = predictions[race.round] || [null, null, null, null, null];
+            const picks  = predictions[race.round] || [null,null,null,null,null];
             const actual = results[race.round];
             const score  = isFinished ? calcScore(picks, actual) : null;
             const isOpen = activeRound === race.round;
 
             return (
-              <div key={race.round} style={{ animation: `fadeUp 0.3s ease ${i * 40}ms both` }}>
-                {/* Race header */}
-                <div
-                  onClick={() => setActive(isOpen ? null : race.round)}
-                  style={{
-                    background: isOpen ? "#0f1420" : "#0d1117",
-                    border: `1px solid ${isOpen ? "#1f2937" : "#1a1f2e"}`,
-                    borderRadius: isOpen ? "12px 12px 0 0" : 12,
-                    padding: "14px 16px", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 12,
-                    transition: "background 0.15s",
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>{getCountryFlag(race.circuit?.country)}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>R{race.round} · {race.name}</div>
-                    <div style={{ fontSize: 11, color: "#4b5563" }}>
-                      {new Date(race.date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+              <div key={race.round} style={{ animation:`fadeUp 0.3s ease ${i*40}ms both` }}>
+                <div onClick={() => setActive(isOpen ? null : race.round)} style={{
+                  background: isOpen ? "var(--bg-raised)" : "var(--bg-surface)",
+                  border:`1px solid ${isOpen ? "var(--border-light)" : "var(--border)"}`,
+                  borderRadius: isOpen ? "12px 12px 0 0" : 12,
+                  padding:"14px 16px", cursor:"pointer",
+                  display:"flex", alignItems:"center", gap:12, transition:"background 0.15s",
+                }}>
+                  <span style={{ fontSize:20 }}>{getCountryFlag(race.circuit?.country)}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:"var(--text-primary)" }}>R{race.round} · {race.name}</div>
+                    <div style={{ fontSize:11, color:"var(--text-secondary)", marginTop:2 }}>
+                      {new Date(race.date).toLocaleDateString("id-ID", { day:"numeric", month:"long", year:"numeric" })}
                     </div>
                   </div>
-
                   {isFinished && score !== null && (
-                    <div style={{
-                      background: score >= 12 ? "#22c55e20" : score >= 6 ? "#fbbf2420" : "#ef444420",
-                      border: `1px solid ${score >= 12 ? "#22c55e44" : score >= 6 ? "#fbbf2444" : "#ef444444"}`,
-                      borderRadius: 8, padding: "4px 12px", textAlign: "center",
-                    }}>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: score >= 12 ? "#22c55e" : score >= 6 ? "#fbbf24" : "#ef4444" }}>{score}</div>
-                      <div style={{ fontSize: 9, color: "#6b7280" }}>/ 15 PTS</div>
+                    <div style={{ background: score>=12?"#22c55e20":score>=6?"var(--red-bg)":"var(--red-bg)", border:`1px solid ${score>=12?"#22c55e44":score>=6?"var(--red-border)":"var(--red-border)"}`, borderRadius:8, padding:"4px 12px", textAlign:"center" }}>
+                      <div style={{ fontSize:18, fontWeight:900, color: score>=12?"#22c55e":score>=6?"var(--gold)":"var(--red)" }}>{score}</div>
+                      <div style={{ fontSize:9, color:"var(--text-secondary)" }}>/ 15 PTS</div>
                     </div>
                   )}
-                  {!isFinished && picks.some(p => p) && (
-                    <span style={{ fontSize: 11, color: "#22c55e" }}>✓ Sudah ditebak</span>
-                  )}
-                  {!isFinished && !picks.some(p => p) && (
-                    <span style={{ fontSize: 11, color: "#fbbf24" }}>Belum ditebak</span>
-                  )}
-                  <span style={{
-                    fontSize: 10, color: "#374151",
-                    display: "inline-block", transition: "transform 0.2s",
-                    transform: isOpen ? "rotate(180deg)" : "none",
-                  }}>▼</span>
+                  {!isFinished && picks.some(p=>p) && <span style={{ fontSize:11, color:"var(--green)" }}>✓ Sudah ditebak</span>}
+                  {!isFinished && !picks.some(p=>p) && <span style={{ fontSize:11, color:"var(--gold)" }}>Belum ditebak</span>}
+                  <span style={{ fontSize:10, color:"var(--text-muted)", display:"inline-block", transition:"transform 0.2s", transform: isOpen?"rotate(180deg)":"none" }}>▼</span>
                 </div>
 
-                {/* Picks form */}
                 {isOpen && (
-                  <div style={{
-                    background: "#090a0f",
-                    border: "1px solid #1f2937", borderTop: "none",
-                    borderRadius: "0 0 12px 12px",
-                    padding: "16px 18px",
-                  }}>
-                    <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
+                  <div style={{ background:"var(--bg-raised)", border:"1px solid var(--border)", borderTop:"none", borderRadius:"0 0 12px 12px", padding:"16px 18px" }}>
+                    <div style={{ display:"grid", gap:8, marginBottom:14 }}>
                       {POSITIONS.map(({ label, emoji }, posIdx) => {
-                        const driverId = picks[posIdx];
-                        const driver   = DRIVERS_2026.find(d => d.id === driverId);
-                        const actualId = actual?.[posIdx];
-                        const isCorrect  = isFinished && driverId === actualId;
-                        const isOnTop5   = isFinished && driverId && actual?.includes(driverId);
-                        const color      = driver ? getTeamColor(driver.team) : "#374151";
-
+                        const driverId  = picks[posIdx];
+                        const driver    = DRIVERS_2026.find(d => d.id === driverId);
+                        const actualId  = actual?.[posIdx];
+                        const isCorrect = isFinished && driverId === actualId;
+                        const isOnTop5  = isFinished && driverId && actual?.includes(driverId);
+                        const color     = driver ? getTeamColor(driver.team) : "var(--border)";
                         return (
-                          <div
-                            key={posIdx}
-                            onClick={() => !isFinished && setPicker({ round: race.round, posIdx })}
-                            style={{
-                              display: "flex", alignItems: "center", gap: 10,
-                              background: driver ? color + "10" : "#0d1117",
-                              border: `1px solid ${isCorrect ? "#22c55e44" : isOnTop5 ? "#fbbf2444" : isFinished && driverId ? "#ef444433" : driver ? color + "30" : "#1f2937"}`,
-                              borderRadius: 10, padding: "10px 14px",
-                              cursor: isFinished ? "default" : "pointer",
-                              transition: "background 0.1s",
-                            }}
-                          >
-                            <div style={{ fontSize: 16, minWidth: 24 }}>{emoji}</div>
-                            <div style={{ flex: 1 }}>
+                          <div key={posIdx} onClick={() => !isFinished && setPicker({ round:race.round, posIdx })} style={{
+                            display:"flex", alignItems:"center", gap:10,
+                            background: driver ? color+"10" : "var(--bg-surface)",
+                            border:`1px solid ${isCorrect?"#22c55e44":isOnTop5?"#fbbf2444":isFinished&&driverId?"var(--red-border)":driver?color+"30":"var(--border)"}`,
+                            borderRadius:10, padding:"10px 14px",
+                            cursor: isFinished ? "default" : "pointer", transition:"background 0.1s",
+                          }}>
+                            <div style={{ fontSize:16, minWidth:24 }}>{emoji}</div>
+                            <div style={{ flex:1 }}>
                               {driver ? (
                                 <>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color }}>{driver.firstName} {driver.lastName}</div>
-                                  <div style={{ fontSize: 10, color: "#4b5563" }}>{driver.teamName}</div>
+                                  <div style={{ fontSize:13, fontWeight:700, color }}>{driver.firstName} {driver.lastName}</div>
+                                  <div style={{ fontSize:10, color:"var(--text-secondary)" }}>{driver.teamName}</div>
                                 </>
                               ) : (
-                                <div style={{ fontSize: 13, color: "#374151" }}>— Pilih driver</div>
+                                <div style={{ fontSize:13, color:"var(--text-secondary)" }}>— Pilih driver</div>
                               )}
                             </div>
                             {isFinished && (
-                              <div style={{ textAlign: "right", fontSize: 11 }}>
-                                {isCorrect  && <span style={{ color: "#22c55e", fontWeight: 700 }}>✓ +3</span>}
-                                {isOnTop5 && !isCorrect && <span style={{ color: "#fbbf24", fontWeight: 700 }}>≈ +1</span>}
-                                {!isOnTop5 && driverId && <span style={{ color: "#ef4444" }}>✗ +0</span>}
-                                {actualId && (
-                                  <div style={{ fontSize: 10, color: "#4b5563", marginTop: 2 }}>
-                                    Aktual: {DRIVERS_2026.find(d => d.id === actualId)?.lastName || actualId}
-                                  </div>
-                                )}
+                              <div style={{ textAlign:"right", fontSize:11 }}>
+                                {isCorrect && <span style={{ color:"var(--green)", fontWeight:700 }}>✓ +3</span>}
+                                {isOnTop5 && !isCorrect && <span style={{ color:"var(--gold)", fontWeight:700 }}>≈ +1</span>}
+                                {!isOnTop5 && driverId && <span style={{ color:"var(--red)" }}>✗ +0</span>}
+                                {actualId && <div style={{ fontSize:10, color:"var(--text-secondary)", marginTop:2 }}>Aktual: {DRIVERS_2026.find(d=>d.id===actualId)?.lastName||actualId}</div>}
                               </div>
                             )}
-                            {!isFinished && <span style={{ fontSize: 10, color: "#374151" }}>›</span>}
+                            {!isFinished && <span style={{ fontSize:10, color:"var(--text-muted)" }}>›</span>}
                           </div>
                         );
                       })}
                     </div>
-
                     {isFinished && score !== null && (
-                      <div style={{
-                        background: "#1a1f2e", borderRadius: 10, padding: "10px 14px",
-                        fontSize: 13, color: "#9ca3af",
-                      }}>
-                        Skor race ini: <strong style={{ color: score >= 12 ? "#22c55e" : score >= 6 ? "#fbbf24" : "#ef4444" }}>{score}/15 poin</strong>
-                        {score === 15 && " 🎉 Sempurna!"}
-                        {score >= 10 && score < 15 && " 🔥 Bagus banget!"}
-                        {score >= 5 && score < 10 && " 👍 Lumayan!"}
-                        {score < 5 && " 😅 Coba lagi!"}
+                      <div style={{ background:"var(--bg-surface)", borderRadius:10, padding:"10px 14px", fontSize:13, color:"var(--text-secondary)", border:"1px solid var(--border)" }}>
+                        Skor race ini: <strong style={{ color: score>=12?"var(--green)":score>=6?"var(--gold)":"var(--red)" }}>{score}/15 poin</strong>
+                        {score===15&&" 🎉 Sempurna!"}{score>=10&&score<15&&" 🔥 Bagus banget!"}{score>=5&&score<10&&" 👍 Lumayan!"}{score<5&&" 😅 Coba lagi!"}
                       </div>
                     )}
                   </div>
@@ -539,16 +369,10 @@ export default function PredictPage() {
           })}
 
           {races.length === 0 && (
-            <div style={{
-              textAlign: "center", padding: "60px 20px",
-              background: "#0d1117", borderRadius: 14,
-              border: "1px solid #1f2937",
-            }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Siapkan prediksimu!</div>
-              <div style={{ fontSize: 13, color: "#6b7280" }}>
-                Race pertama musim ini segera dimulai.<br />Australian GP · 8 Maret 2026
-              </div>
+            <div style={{ textAlign:"center", padding:"60px 20px", background:"var(--bg-surface)", borderRadius:14, border:"1px solid var(--border)" }}>
+              <div style={{ fontSize:40, marginBottom:12 }}>🎯</div>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:8, color:"var(--text-primary)" }}>Siapkan prediksimu!</div>
+              <div style={{ fontSize:13, color:"var(--text-secondary)" }}>Race pertama musim ini segera dimulai.</div>
             </div>
           )}
         </div>
