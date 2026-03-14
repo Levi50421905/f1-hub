@@ -314,22 +314,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      <button
-  onClick={async () => {
-    const res = await fetch("/api/push/send", {
-      headers: { "Authorization": "Bearer f1hubcron2026secret" }
-    });
-    const data = await res.json();
-    alert(JSON.stringify(data, null, 2));
-  }}
-  style={{
-    position: "fixed", bottom: 80, right: 16, zIndex: 9999,
-    background: "#ef4444", color: "#fff", border: "none",
-    borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
-  }}
->
-  TEST PUSH
-</button>
     </div>
   );
 }
