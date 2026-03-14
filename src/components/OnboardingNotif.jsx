@@ -4,6 +4,8 @@
 // Step 0: Welcome → Step 1: Preview notif → Step 2: Pilih sesi → Step 3: Aktifkan + Test
 
 import { useState, useEffect } from "react";
+import { SCHEDULE_2026 } from "@/lib/schedule2026";
+import { subscribeToPush } from "@/components/PWAProvider";
 
 const SESSION_OPTIONS = [
   { key: "fp1",        label: "Free Practice 1",   icon: "🟡", sprint: false },
@@ -132,7 +134,65 @@ export default function OnboardingNotif({ onDone }) {
   }
 
   function saveAndFinish() {
+    // Simpan preferensi onboarding
     localStorage.setItem("f1-notif-prefs", JSON.stringify({ sessions: selected, reminderMins, raceWeek }));
+
+    // Konversi preferensi ke format f1-reminders untuk SEMUA race mendatang
+    // Ini yang dibaca buildAllSchedules di PWAProvider untuk kirim ke SW
+    const existing = JSON.parse(localStorage.getItem("f1-reminders") || "{}");
+    const now = Date.now();
+
+    // Map key onboarding → key session di schedule2026
+    const SESSION_MAP = {
+      fp1: "fp1", fp2: "fp2", sprintQual: "fp2",
+      fp3: "fp3", sprintRace: "fp3", qualifying: "qualifying", race: "race",
+    };
+
+    Object.entries(SCHEDULE_2026).forEach(([roundStr, raceData]) => {
+      const round = parseInt(roundStr);
+      const isSprint = !!raceData.sprint;
+
+      // Race Week Reminder
+      if (raceWeek && raceData.fp1) {
+        const fp1dt = new Date(raceData.fp1.date + "T" + raceData.fp1.time + (raceData.fp1.time.endsWith("Z") ? "" : "Z"));
+        if (fp1dt.getTime() - 7 * 24 * 60 * 60 * 1000 > now) {
+          existing[`raceweek-toggle-${round}`] = { round, type: "raceweek" };
+        }
+      }
+
+      // Session reminders
+      SESSION_OPTIONS.forEach(({ key: sessKey }) => {
+        if (!selected[sessKey]) return;
+
+        // Sprint-only sessions hanya untuk sprint weekend
+        if ((sessKey === "sprintQual" || sessKey === "sprintRace") && !isSprint) return;
+        // fp2/fp3 yang bukan sprint: jangan dobel dengan sprintQual/sprintRace
+        if (sessKey === "fp2" && isSprint) return;
+        if (sessKey === "fp3" && isSprint) return;
+
+        const schedKey = SESSION_MAP[sessKey];
+        const sData = raceData[schedKey];
+        if (!sData) return;
+
+        const sdt = new Date(sData.date + "T" + sData.time + (sData.time.endsWith("Z") ? "" : "Z"));
+        if (sdt.getTime() <= now) return; // sudah lewat
+
+        const remKey = `${round}-${schedKey}-${reminderMins}`;
+        existing[remKey] = { round, session: schedKey, minutesBefore: reminderMins };
+      });
+    });
+
+    localStorage.setItem("f1-reminders", JSON.stringify(existing));
+
+    // Sync ke SW (fallback)
+    if (typeof window.__f1SyncNotif === "function") {
+      setTimeout(() => window.__f1SyncNotif(), 300);
+    }
+
+    // Subscribe ke server push (yang reliable)
+    const pushPrefs = { sessions: selected, reminderMins, raceWeek };
+    subscribeToPush(pushPrefs).catch(console.error);
+
     localStorage.setItem("f1-notif-onboarded", ONBOARD_VERSION);
     setVisible(false);
     setTimeout(() => onDone?.(), 350);

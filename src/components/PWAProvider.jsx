@@ -68,8 +68,10 @@ function buildAllSchedules(savedReminders) {
     });
 
     // ── 2. RACE WEEK REMINDER (7 hari sebelum FP1) ──────────
+    // Hanya kalau user aktifkan toggle Race Week
+    const raceWeekToggleKey = `raceweek-toggle-${round}`;
     const fp1Data = raceData.fp1;
-    if (fp1Data) {
+    if (fp1Data && savedReminders[raceWeekToggleKey]) {
       const fp1Time = parseUTC(fp1Data.date, fp1Data.time);
       if (fp1Time) {
         const fireAt = fp1Time - 7 * 24 * 60 * 60 * 1000; // 7 hari sebelum
@@ -121,7 +123,6 @@ async function syncSchedulesToSW() {
   const reg = await navigator.serviceWorker.ready;
   if (!reg.active) return;
 
-  // Ambil reminders dari localStorage
   const savedReminders = JSON.parse(
     localStorage.getItem("f1-reminders") || "{}"
   );
@@ -132,6 +133,59 @@ async function syncSchedulesToSW() {
     type: "SAVE_SCHEDULES",
     payload: { schedules },
   });
+}
+
+// ─── Subscribe ke server push ─────────────────────────────────
+export async function subscribeToPush(prefs) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    // Ambil VAPID public key dari server
+    const res = await fetch("/api/push/vapid");
+    const { publicKey } = await res.json();
+    if (!publicKey) return;
+
+    const reg = await navigator.serviceWorker.ready;
+
+    // Subscribe ke push manager
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    // Kirim subscription ke server
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription),
+    });
+
+    // Kirim preferensi sesi ke server
+    if (prefs) {
+      const endpoint = subscription.endpoint;
+      await fetch("/api/push/prefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint, prefs }),
+      });
+    }
+
+    // Simpan endpoint di localStorage untuk referensi
+    localStorage.setItem("f1-push-endpoint", subscription.endpoint);
+
+    console.log("[PWA] Push subscription berhasil ✓");
+  } catch (err) {
+    console.error("[PWA] Push subscription gagal:", err);
+  }
+}
+
+// Konversi VAPID key dari base64 ke Uint8Array
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return new Uint8Array([...rawData].map((c) => c.charCodeAt(0)));
 }
 
 // ─── Daftar Periodic Background Sync ─────────────────────────
